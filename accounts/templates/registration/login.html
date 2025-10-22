@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Portal Login</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font for a clean, modern look */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* Gradient background for visual appeal */
+            background: linear-gradient(135deg, #e0f2fe 0%, #c7d2fe 100%);
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-blue': '#4f46e5',
+                        'primary-dark': '#3730a3',
+                    }
+                }
+            }
+        }
+
+        // Function to handle the login attempt
+        function handleLogin(event) {
+            event.preventDefault(); // Stop default form submission
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const messageBox = document.getElementById('message-box');
+            
+            // Basic validation
+            if (!email || !password) {
+                messageBox.innerHTML = '<div class="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">Please enter both your Student ID/Email and Password.</div>';
+                messageBox.classList.remove('hidden');
+                return;
+            }
+
+            // Simulate API call delay
+            const loginButton = document.getElementById('login-button');
+            const originalText = loginButton.innerHTML;
+            
+            loginButton.disabled = true;
+            loginButton.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Logging in...';
+
+            setTimeout(() => {
+                // In a real application, you would check credentials here.
+                const success = true; 
+
+                if (success) {
+                    messageBox.innerHTML = '<div class="p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg">Login successful! Redirecting you now...</div>';
+                } else {
+                    messageBox.innerHTML = '<div class="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">Invalid credentials. Please try again.</div>';
+                }
+                
+                messageBox.classList.remove('hidden');
+                
+                // Reset button after simulation
+                loginButton.disabled = false;
+                loginButton.innerHTML = originalText;
+
+            }, 1500); // 1.5 seconds delay
+        }
+    </script>
+</head>
+<body>
+
+    <!-- Main Container Card -->
+    <div class="w-full max-w-md p-8 sm:p-10 bg-white rounded-2xl shadow-2xl transition-all duration-300 hover:shadow-primary-dark/20 mx-4">
+        
+        <!-- Header Section -->
+        <div class="text-center mb-8">
+            <svg class="w-12 h-12 text-primary-blue mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.247m0-13C13.168 5.477 14.754 5 16.5 5s3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18s-3.332.477-4.5 1.247"></path>
+            </svg>
+            <h1 class="text-3xl font-extrabold text-gray-800">Student Portal Access</h1>
+            <p class="text-gray-500 mt-2">Sign in to view your assessments and results.</p>
+        </div>
+
+        <!-- Message Box (Hidden by default) -->
+        <div id="message-box" class="mb-6 hidden" role="alert">
+            <!-- Messages will appear here -->
+        </div>
+
+        <!-- Login Form -->
+        <form onsubmit="handleLogin(event)">
+            
+            <!-- Email / Student ID Field -->
+            <div class="mb-5">
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Student ID or Email</label>
+                <input 
+                    type="text" 
+                    id="email" 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-primary-blue focus:ring-1 focus:ring-primary-blue transition duration-150 outline-none"
+                    placeholder="e.g., S1234567 or email@school.edu"
+                    required
+                >
+            </div>
+
+            <!-- Password Field -->
+            <div class="mb-6">
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-primary-blue focus:ring-1 focus:ring-primary-blue transition duration-150 outline-none"
+                    placeholder="••••••••"
+                    required
+                >
+            </div>
+
+            <!-- Options (Forgot Password) -->
+            <div class="flex justify-between items-center mb-8">
+                <div class="flex items-center">
+                    <input id="remember-me" type="checkbox" class="h-4 w-4 text-primary-blue border-gray-300 rounded focus:ring-primary-blue">
+                    <label for="remember-me" class="ml-2 block text-sm text-gray-600">Remember me</label>
+                </div>
+                <a href="#" class="text-sm font-medium text-primary-blue hover:text-primary-dark transition duration-150">
+                    Forgot Password?
+                </a>
+            </div>
+
+            <!-- Login Button -->
+            <button 
+                id="login-button"
+                type="submit" 
+                class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-lg text-lg font-semibold text-white bg-primary-blue hover:bg-primary-dark focus:outline-none focus:ring-4 focus:ring-indigo-500/50 transition duration-200 ease-in-out transform hover:scale-[1.01]"
+            >
+                Log In
+            </button>
+        </form>
+        
+        <!-- Footer / Policy Link -->
+        <div class="mt-8 text-center">
+            <p class="text-xs text-gray-400">
+                By logging in, you agree to our 
+                <a href="#" class="text-primary-blue hover:underline">Privacy Policy</a>.
+            </p>
+        </div>
+
+    </div>
+
+</body>
+</html>
