@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ category.name }} Quiz</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class', // Enable dark mode based on the 'dark' class on the html tag
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#4f46e5', // Indigo 600
+                        'secondary': '#eef2ff', // Indigo 50
+                        'card-bg': '#ffffff',
+                    },
+                    fontFamily: {
+                        // Changed font to Mediterrian
+                        sans: ['Mediterrian', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom styles to hide default radio button while keeping functionality */
+        .option-label input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        /* Style for the selected radio option in LIGHT mode */
+        .option-label input[type="radio"]:checked + .custom-radio {
+            background-color: #3b82f6; /* Blue 500 */
+            border-color: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Style for the selected radio option in DARK mode */
+        .dark .option-label input[type="radio"]:checked + .custom-radio {
+            background-color: #4f46e5; /* Primary Indigo */
+            border-color: #4f46e5;
+            color: white;
+        }
+
+        /* Ensure the custom radio text is fully visible */
+        .custom-radio {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen p-4 sm:p-8 font-sans transition-colors duration-300">
+
+    <div class="max-w-4xl mx-auto">
+        
+        <!-- Header Section -->
+        <header class="text-center mb-10 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg relative transition-colors duration-300">
+            <!-- Dark Mode Toggle Button -->
+            <button id="theme-toggle" type="button" class="absolute top-4 right-4 p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary transition-colors duration-300" aria-label="Toggle dark mode">
+                <!-- Sun Icon (Visible in Dark Mode) -->
+                <svg id="sun-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                <!-- Moon Icon (Visible in Light Mode) -->
+                <svg id="moon-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+            </button>
+            <h1 class="text-4xl font-extrabold text-gray-800 dark:text-white tracking-tight transition-colors duration-300">
+                {{ category.name }} Quiz
+            </h1>
+            <p class="mt-2 text-lg text-gray-500 dark:text-gray-400 transition-colors duration-300">Test your knowledge!</p>
+        </header>
+
+        <!-- Placeholder for conditional rendering: Show Quiz Form if score is NOT defined -->
+        {% if score is None %}
+            <!-- Quiz Form -->
+            <form method="post" action="{% url 'start_quiz' category.id %}">
+    {% csrf_token %}
+                {% for q in questions %}
+                    <!-- Question Box -->
+                    <div class="question-box bg-card-bg dark:bg-gray-800 p-6 rounded-2xl shadow-xl border-t-4 border-primary transition duration-300 hover:shadow-2xl">
+                        <p class="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-200 transition-colors duration-300">
+                            <span class="text-primary mr-2">Q{{ forloop.counter }}:</span> {{ q.question_text }}
+                        </p>
+
+                        <div class="space-y-3">
+                            <!-- Option A -->
+                            <label class="option-label relative block cursor-pointer">
+                                <input type="radio" name="q{{ q.id }}" value="A" required>
+                                <div class="custom-radio bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-secondary dark:hover:bg-primary/20 hover:border-primary transition duration-200">
+                                    <span class="font-medium mr-2 text-primary">A)</span> {{ q.option_a }}
+                                </div>
+                            </label>
+
+                            <!-- Option B -->
+                            <label class="option-label relative block cursor-pointer">
+                                <input type="radio" name="q{{ q.id }}" value="B" required>
+                                <div class="custom-radio bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-secondary dark:hover:bg-primary/20 hover:border-primary transition duration-200">
+                                    <span class="font-medium mr-2 text-primary">B)</span> {{ q.option_b }}
+                                </div>
+                            </label>
+
+                            <!-- Option C -->
+                            <label class="option-label relative block cursor-pointer">
+                                <input type="radio" name="q{{ q.id }}" value="C" required>
+                                <div class="custom-radio bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-secondary dark:hover:bg-primary/20 hover:border-primary transition duration-200">
+                                    <span class="font-medium mr-2 text-primary">C)</span> {{ q.option_c }}
+                                </div>
+                            </label>
+
+                            <!-- Option D -->
+                            <label class="option-label relative block cursor-pointer">
+                                <input type="radio" name="q{{ q.id }}" value="D" required>
+                                <div class="custom-radio bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-secondary dark:hover:bg-primary/20 hover:border-primary transition duration-200">
+                                    <span class="font-medium mr-2 text-primary">D)</span> {{ q.option_d }}
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                {% empty %}
+                    <!-- Empty State -->
+                    <div class="text-center bg-yellow-50 dark:bg-yellow-900/50 p-6 rounded-lg border border-yellow-200 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200 shadow-md transition-colors duration-300">
+                        <p class="font-semibold text-lg">No questions found for this category.</p>
+                        <p class="text-sm mt-1">Please check back later or select a different category.</p>
+                    </div>
+                {% endfor %}
+
+                {% if questions %}
+                    <!-- Submit Button -->
+                    <div class="pt-4 flex justify-center">
+                        <button type="submit" class="w-full sm:w-auto px-10 py-3 text-lg font-bold bg-primary text-white rounded-full shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50 transition duration-150 transform hover:scale-[1.02]">
+                            Submit Quiz
+                        </button>
+                    </div>
+                {% endif %}
+            </form>
+        {% endif %}
+
+        <!-- Placeholder for conditional rendering: Show Results if score is defined -->
+        {% if score is not None %}
+            <div class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-2xl transition-colors duration-300">
+                <h2 class="text-3xl font-extrabold text-gray-800 dark:text-white mb-6 text-center">
+                    Results for {{ category.name }}
+                </h2>
+
+                <!-- Score Summary Box -->
+                <div class="bg-secondary/50 dark:bg-gray-700 p-6 rounded-xl shadow-inner mb-8 text-center border-b-4 border-primary">
+                    <p class="text-2xl font-bold text-gray-700 dark:text-gray-200 mb-2">
+                        Score: <span class="text-primary">{{ score }}</span> / {{ total }}
+                    </p>
+                    <p class="text-4xl font-extrabold text-primary">
+                        {{ percentage }}%
+                    </p>
+                </div>
+
+                <!-- Answer Review Section -->
+                <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-4 border-b pb-2 border-gray-200 dark:border-gray-700">
+                    Answer Review
+                </h3>
+                
+                {% for r in results %}
+                    <div class="bg-gray-50 dark:bg-gray-700 p-5 rounded-lg shadow-md mb-4 border border-gray-200 dark:border-gray-600 transition-colors duration-300">
+                        <!-- Question Text -->
+                        <p class="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-100">
+                            {{ forloop.counter }}. {{ r.question }}
+                        </p>
+                        
+                        <!-- User's Answer and Status -->
+                        <p class="text-base mb-1 text-gray-700 dark:text-gray-300">
+                            Your answer: 
+                            <span class="font-bold {% if r.is_correct %}text-green-600 dark:text-green-400{% else %}text-red-600 dark:text-red-400{% endif %}">
+                                {{ r.selected|default:"Not answered" }}
+                            </span>
+                        </p>
+                        
+                        <!-- Correct Answer (if incorrect) -->
+                        {% if not r.is_correct %}
+                            <p class="text-base text-gray-600 dark:text-gray-400">
+                                Correct answer: <b class="text-green-600 dark:text-green-400">{{ r.correct_answer }}</b>
+                            </p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <!-- Back Button -->
+                <div class="mt-8 text-center">
+                    <a href="{% url 'category_list' %}" class="inline-flex items-center px-8 py-3 text-lg font-bold bg-primary text-white rounded-full shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50 transition duration-150 transform hover:scale-[1.02]">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 15l-3-3m0 0l3-3m-3 3h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z"></path></svg>
+                        Back to Categories
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Theme initialization and toggle logic
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const sunIcon = document.getElementById('sun-icon');
+        const moonIcon = document.getElementById('moon-icon');
+
+        // Function to set the theme based on class on the HTML element
+        function setTheme(isDark) {
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('color-theme', 'dark');
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+            } else {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('color-theme', 'light');
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            }
+        }
+
+        // Check saved theme or system preference on load
+        const savedTheme = localStorage.getItem('color-theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        // Apply initial theme
+        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+            setTheme(true);
+        } else {
+            setTheme(false);
+        }
+
+        // Toggle logic
+        themeToggleBtn.addEventListener('click', () => {
+            const isCurrentlyDark = document.documentElement.classList.contains('dark');
+            setTheme(!isCurrentlyDark);
+        });
+    </script>
+</body>
+</html>

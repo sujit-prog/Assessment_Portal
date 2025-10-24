@@ -1,8 +1,0 @@
-<h1>Select a Subject</h1>
-<ul>
-    {% for category in categories %}
-        <li><a href="{% url 'quiz_view' category.id %}">{{ category.name }}</a></li>
-    {% empty %}
-        <li>No subjects available</li>
-    {% endfor %}
-</ul>
