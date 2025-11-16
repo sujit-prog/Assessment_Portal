@@ -4,24 +4,24 @@
     {
       "src": "quiz_app/wsgi.py",
       "use": "@vercel/python",
-      "config": {
-        "maxLambdaSize": "50mb"
-      }
+      "config": { "maxLambdaSize": "15mb", "runtime": "python3.9" }
     },
     {
-      "src": "static/**",
-      "use": "@vercel/static"
+      "src": "build_files.sh",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "staticfiles_build"
+      }
     }
   ],
-  "rewrites": [
-    { "source": "/static/(.*)", "destination": "/static/$1" },
-    { "source": "/(.*)", "destination": "/quiz_app/wsgi.py" }
-  ],
-  "env": {
-    "DEBUG": "False",
-    "SECRET_KEY": "your-secret-key",
-    "DJANGO_SETTINGS_MODULE": "quiz_app.settings",
-    "DATABASE_URL=postgres":"//postgres:#Password10sujit@db.qtnfjvkekdwzhhigzfgb.supabase.co:5432/postgres"
-
-  }
+  "routes": [
+    {
+      "src": "/static/(.*)",
+      "dest": "/static/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "quiz_app/wsgi.py"
+    }
+  ]
 }
