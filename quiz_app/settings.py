@@ -1,21 +1,26 @@
-import os
-from pathlib import Path
+"""
+Django settings for quiz_app project.
+"""
 
-# -------------------------------
-# BASE DIRECTORY
-# -------------------------------
+from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# -------------------------------
-# SECURITY
-# -------------------------------
-SECRET_KEY = 't7q^$5o1i&4n!p9v*0x@8f+z2m!e7g#h6w^y3s%q@j1'  # generate your own if needed
-DEBUG = True
-ALLOWED_HOSTS = []
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-your-secret-key-here')
 
-# -------------------------------
-# INSTALLED APPS
-# -------------------------------
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = True
+
+ALLOWED_HOSTS = ['*']
+
+# Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -23,36 +28,25 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
-    'accounts',
-      'home',  # your app for login/register/dashboard
+    'home',  # YOUR APP - THIS WAS MISSING!
 ]
 
-# -------------------------------
-# MIDDLEWARE
-# -------------------------------
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',         # ✅ required
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',      # ✅ required
-    'django.contrib.messages.middleware.MessageMiddleware',         # ✅ required
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# -------------------------------
-# ROOT URL CONFIGURATION
-# -------------------------------
-ROOT_URLCONF = 'quiz_app.urls'  # make sure this points to your main urls.py
+ROOT_URLCONF = 'quiz_app.urls'
 
-# -------------------------------
-# TEMPLATES
-# -------------------------------
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],  # global templates folder
+        'DIRS': [BASE_DIR / 'accounts'/'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -65,56 +59,77 @@ TEMPLATES = [
     },
 ]
 
-# -------------------------------
-# WSGI
-# -------------------------------
 WSGI_APPLICATION = 'quiz_app.wsgi.application'
 
-# -------------------------------
-# DATABASES (SQLite for dev)
-# -------------------------------
+# Database - Supabase PostgreSQL
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('SUPABASE_DB_NAME', 'postgres'),
+        'USER': os.getenv('SUPABASE_DB_USER', 'postgres.dvdbwijtneuomdphwslm'),  # Supabase format
+        'PASSWORD': os.getenv('SUPABASE_DB_PASSWORD', ''),
+        'HOST': os.getenv('SUPABASE_DB_HOST', ''),
+        'PORT': os.getenv('SUPABASE_DB_PORT', '5432'),
+        'OPTIONS': {
+            'sslmode': 'require',
+        },
+        'CONN_MAX_AGE': 600,  # Keep connections alive
     }
 }
 
-# -------------------------------
-# PASSWORD VALIDATION
-# -------------------------------
+# Check if database is configured
+if not os.getenv('SUPABASE_DB_HOST'):
+    print("\n" + "="*70)
+    print("⚠️  WARNING: Supabase database not configured!")
+    print("="*70)
+    print(f"Please create a .env file at: {BASE_DIR / '.env'}")
+    print("\nAdd these lines to your .env file:")
+    print("-" * 70)
+    print("SECRET_KEY=django-insecure-your-secret-key")
+    print("SUPABASE_DB_HOST=db.xxxxx.supabase.co")
+    print("SUPABASE_DB_NAME=postgres")
+    print("SUPABASE_DB_USER=postgres")
+    print("SUPABASE_DB_PASSWORD=your-password")
+    print("SUPABASE_DB_PORT=5432")
+    print("="*70 + "\n")
+
+# Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        'OPTIONS': {
+            'min_length': 6,
+        }
     },
 ]
 
-# -------------------------------
-# INTERNATIONALIZATION
-# -------------------------------
+# Internationalization
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'Asia/Kolkata'
+TIME_ZONE = 'UTC'
 USE_I18N = True
-USE_L10N = True
 USE_TZ = True
 
-# -------------------------------
-# STATIC FILES
-# -------------------------------
+# Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']        # optional, create a 'static' folder
-STATIC_ROOT = BASE_DIR / 'staticfiles'          # for production collectstatic
+STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# -------------------------------
-# DEFAULT AUTO FIELD
-# -------------------------------
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Login URLs
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'dashboard'
+LOGOUT_REDIRECT_URL = 'login'
+
+# Session settings
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 86400  # 24 hours
+SESSION_SAVE_EVERY_REQUEST = True

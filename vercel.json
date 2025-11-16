@@ -1,40 +1,27 @@
 {
-    "builds": [
-        {
-            "src": "quiz_app/package.json",
-            "use": "@vercel/static-build",
-            "config": {
-                "distDir": "quiz_app"
-            }
-        }
-    ],
-    "routes": [
-        {
-            "src": "/(.*)",
-            "dest": "quiz_app/$1"
-        }
-    ],  
-    "env": {
-        "NEXT_PUBLIC_API_URL": "https://api.example.com"
+  "version": 2,
+  "builds": [
+    {
+      "src": "quiz_app/wsgi.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "50mb"
+      }
     },
-    "functions": {
-        "api/**": {
-            "memory": 512,
-            "maxDuration": 10
-        }
-    },
-    "regions": ["all"],
-    "cleanUrls": true,
-    "trailingSlash": false,
-    "headers": [
-        {
-            "source": "/(.*)",
-            "headers": [
-                {
-                    "key": "Cache-Control",
-                    "value": "public, max-age=31536000, immutable"
-                }
-            ]
-        }
-    ]
+    {
+      "src": "static/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "rewrites": [
+    { "source": "/static/(.*)", "destination": "/static/$1" },
+    { "source": "/(.*)", "destination": "/quiz_app/wsgi.py" }
+  ],
+  "env": {
+    "DEBUG": "False",
+    "SECRET_KEY": "your-secret-key",
+    "DJANGO_SETTINGS_MODULE": "quiz_app.settings",
+    "DATABASE_URL=postgres":"//postgres:#Password10sujit@db.qtnfjvkekdwzhhigzfgb.supabase.co:5432/postgres"
+
+  }
 }
