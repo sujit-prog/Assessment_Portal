@@ -6,6 +6,8 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 
+
+
 # Load environment variables
 load_dotenv()
 
@@ -25,6 +27,11 @@ ALLOWED_HOSTS = [
     '.vercel.app',
     'assessmentportal-seven.vercel.app',
 ]
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+
 
 # CSRF Trusted Origins for production
 CSRF_TRUSTED_ORIGINS = [
@@ -79,18 +86,14 @@ WSGI_APPLICATION = 'quiz_app.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('SUPABASE_DB_NAME', 'postgres'),
-        'USER': os.getenv('SUPABASE_DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('SUPABASE_DB_PASSWORD', ''),
-        'HOST': os.getenv('SUPABASE_DB_HOST', ''),
-        'PORT': os.getenv('SUPABASE_DB_PORT', '5432'),
-        'OPTIONS': {
-            'sslmode': 'require',
-        },
-        'CONN_MAX_AGE': 600,  # Keep connections alive for 10 minutes
-        'CONN_HEALTH_CHECKS': True,  # Enable connection health checks
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
     }
 }
+
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
