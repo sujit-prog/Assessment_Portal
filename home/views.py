@@ -4,124 +4,51 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.db import IntegrityError
-from django.db.models import Avg, Max
+from django.db.models import Avg, Max, Count
 from .models import Category, Question, QuizAttempt
 import random
-
-# ==================== AUTHENTICATION VIEWS ====================
-
-def login_view(request):
-    """Handle user login"""
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        
-        # Debug logging
-        print(f"Login attempt - Username: {username}")
-        
-        # Check if user exists
-        try:
-            user_exists = User.objects.get(username=username)
-            print(f"User found: {user_exists.username}, Active: {user_exists.is_active}")
-        except User.DoesNotExist:
-            print(f"User '{username}' does not exist in database")
-            messages.error(request, 'Invalid username or password.')
-            return render(request, 'login.html')
-        
-        # Authenticate user
-        user = authenticate(request, username=username, password=password)
-        
-        if user is not None:
-            auth_login(request, user)
-            messages.success(request, 'Login successful!')
-            print(f"User {username} logged in successfully")
-            return redirect('dashboard')
-        else:
-            print(f"Authentication failed for user: {username}")
-            messages.error(request, 'Invalid username or password.')
-            return render(request, 'login.html')
-    
-    return render(request, 'login.html')
-
-def register_view(request):
-    """Handle user registration"""
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-        confirm_password = request.POST.get('confirm_password')
-        
-        # Validation
-        if not username or not email or not password:
-            messages.error(request, 'All fields are required.')
-            return render(request, 'register.html')
-        
-        if password != confirm_password:
-            messages.error(request, 'Passwords do not match.')
-            return render(request, 'register.html')
-        
-        if len(password) < 6:
-            messages.error(request, 'Password must be at least 6 characters long.')
-            return render(request, 'register.html')
-        
-        # Check if username already exists
-        if User.objects.filter(username=username).exists():
-            messages.error(request, 'Username already exists.')
-            return render(request, 'register.html')
-        
-        # Check if email already exists
-        if User.objects.filter(email=email).exists():
-            messages.error(request, 'Email already exists.')
-            return render(request, 'register.html')
-        
-        try:
-            # CRITICAL: Use create_user to properly hash the password
-            user = User.objects.create_user(
-                username=username,
-                email=email,
-                password=password
-            )
-            user.save()
-            
-            messages.success(request, 'Registration successful! Please login.')
-            print(f"New user registered: {username}")
-            return redirect('login')
-            
-        except IntegrityError as e:
-            print(f"Registration error: {e}")
-            messages.error(request, 'An error occurred during registration. Please try again.')
-            return render(request, 'register.html')
-    
-    return render(request, 'register.html')
-
-def logout_view(request):
-    """Handle user logout"""
-    auth_logout(request)
-    messages.success(request, 'You have been logged out successfully.')
-    return redirect('login')
 
 # ==================== DASHBOARD & QUIZ VIEWS ====================
 
 @login_required(login_url='login')
 def dashboard(request):
     """Display user dashboard with quiz statistics"""
+    # Get user's quiz attempts
     attempts = QuizAttempt.objects.filter(user=request.user).order_by('-timestamp')
-
+    
+    # Calculate statistics
     total_attempts = attempts.count()
-    average_score = round(attempts.aggregate(Avg('score'))['score__avg'] or 0, 2)
-    best_score = round(attempts.aggregate(Max('score'))['score__max'] or 0, 2)
-
-    # Prepare data for the chart
-    dates = [a.timestamp.strftime("%b %d") for a in attempts[:10]]  # Last 10 attempts
-    scores = [a.score for a in attempts[:10]]
+    
+    # Calculate average percentage
+    if total_attempts > 0:
+        total_percentage = sum((attempt.score / attempt.total * 100) if attempt.total > 0 else 0 
+                               for attempt in attempts)
+        average_score = round(total_percentage / total_attempts, 1)
+    else:
+        average_score = 0
+    
+    # Get recent attempts for display
+    recent_attempts = attempts[:4]  # Last 4 attempts
+    
+    # Calculate subject-wise performance
+    subject_performance = []
+    categories = Category.objects.all()
+    for category in categories:
+        cat_attempts = attempts.filter(category=category)
+        if cat_attempts.exists():
+            cat_total = sum((a.score / a.total * 100) if a.total > 0 else 0 for a in cat_attempts)
+            avg_score = round(cat_total / cat_attempts.count(), 1)
+            subject_performance.append({
+                'subject': category.name,
+                'score': avg_score
+            })
 
     context = {
-        'attempts': attempts,
+        'attempts': recent_attempts,
         'total_attempts': total_attempts,
         'average_score': average_score,
-        'best_score': best_score,
-        'dates': dates,
-        'scores': scores,
+        'subject_performance': subject_performance,
+        'user': request.user,
     }
     return render(request, 'home/dashboard.html', context)
 
@@ -135,19 +62,40 @@ def select_category(request):
 def start_quiz(request, category_id):
     """Start a quiz for selected category"""
     category = get_object_or_404(Category, id=category_id)
-    questions = Question.objects.filter(category=category)
+    questions = list(Question.objects.filter(category=category))
+    
+    # Shuffle questions for randomness
+    random.shuffle(questions)
 
     if request.method == 'POST':
         score = 0
-        total = questions.count()
+        total = len(questions)
+        results = []
 
-        # Calculate score
+        # Calculate score and prepare results
         for q in questions:
             selected_option = request.POST.get(f'q{q.id}')
-            if selected_option == q.correct_option:
+            is_correct = selected_option == q.correct_option
+            
+            if is_correct:
                 score += 1
+            
+            # Get the text of the selected and correct options
+            option_map = {
+                'A': q.option_a,
+                'B': q.option_b,
+                'C': q.option_c,
+                'D': q.option_d
+            }
+            
+            results.append({
+                'question': q.question_text,
+                'selected': option_map.get(selected_option, 'Not answered'),
+                'correct': option_map.get(q.correct_option, 'N/A'),
+                'is_correct': is_correct
+            })
 
-        # Save quiz attempt
+        # Save quiz attempt with user
         QuizAttempt.objects.create(
             user=request.user,
             category=category,
@@ -155,13 +103,14 @@ def start_quiz(request, category_id):
             total=total
         )
 
-        percentage = (score / total) * 100 if total > 0 else 0
+        percentage = round((score / total) * 100, 1) if total > 0 else 0
 
         return render(request, 'home/evaluation.html', {
             'category': category,
             'score': score,
             'total': total,
-            'percentage': round(percentage, 2),
+            'percentage': percentage,
+            'results': results,
         })
 
     return render(request, 'home/start_quiz.html', {
@@ -173,12 +122,16 @@ def start_quiz(request, category_id):
 def quiz_result(request, attempt_id):
     """Display specific quiz result"""
     attempt = get_object_or_404(QuizAttempt, id=attempt_id, user=request.user)
-    return render(request, 'home/quiz_result.html', {'attempt': attempt})
+    percentage = round((attempt.score / attempt.total) * 100, 1) if attempt.total > 0 else 0
+    
+    return render(request, 'home/quiz_result.html', {
+        'attempt': attempt,
+        'percentage': percentage
+    })
 
 @login_required(login_url='login')
 def submit_quiz(request):
     """Submit quiz answers and calculate score"""
-    print("✅ submit_quiz view called!")
     if request.method == 'POST':
         score = 0
         total = 0
@@ -195,12 +148,12 @@ def submit_quiz(request):
                 except Question.DoesNotExist:
                     pass
 
-        percentage = (score / total) * 100 if total > 0 else 0
+        percentage = round((score / total) * 100, 1) if total > 0 else 0
         
         return render(request, 'home/result.html', {
             'score': score,
             'total': total,
-            'percentage': round(percentage, 2),
+            'percentage': percentage,
         })
 
     return redirect('dashboard')
@@ -208,5 +161,11 @@ def submit_quiz(request):
 @login_required(login_url='login')
 def result_page(request):
     """Show latest quiz result"""
-    latest_attempt = QuizAttempt.objects.filter(user=request.user).last()
-    return render(request, 'home/quiz_result.html', {'attempt': latest_attempt})
+    latest_attempt = QuizAttempt.objects.filter(user=request.user).order_by('-timestamp').first()
+    if latest_attempt:
+        percentage = round((latest_attempt.score / latest_attempt.total) * 100, 1) if latest_attempt.total > 0 else 0
+        return render(request, 'home/quiz_result.html', {
+            'attempt': latest_attempt,
+            'percentage': percentage
+        })
+    return redirect('dashboard')

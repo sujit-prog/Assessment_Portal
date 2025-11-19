@@ -6,8 +6,6 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 
-
-
 # Load environment variables
 load_dotenv()
 
@@ -31,7 +29,6 @@ ALLOWED_HOSTS = [
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
-
 
 # CSRF Trusted Origins for production
 CSRF_TRUSTED_ORIGINS = [
@@ -82,7 +79,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'quiz_app.wsgi.application'
 
-# Database - Supabase PostgreSQL
+# Database - Supabase PostgreSQL with proper pooling configuration
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -91,9 +88,14 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST': os.getenv('DB_HOST'),
         'PORT': os.getenv('DB_PORT'),
+        'OPTIONS': {
+            'sslmode': 'require',
+            'connect_timeout': 30,
+        },
+        'CONN_MAX_AGE': 0,  # Important for pooler
+        'DISABLE_SERVER_SIDE_CURSORS': True,  # Required for pooler
     }
 }
-
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
