@@ -9,6 +9,45 @@ from .models import Category, Question, QuizAttempt
 import random
 from datetime import datetime, timedelta
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from .models import Category # Assuming Category model is here
+from .quiz_generator import generate_and_save_questions # Import the new utility
+
+# Note: You should apply appropriate staff/login decorators here
+# @login_required 
+# @user_passes_test(is_staff_user) # Assuming you have a decorator for staff
+def generate_questions(request, category_id):
+    """
+    Handles displaying the question generation form and processing the generation request.
+    """
+    category = get_object_or_404(Category, pk=category_id)
+
+    if request.method == 'POST':
+        topic_prompt = request.POST.get('topic_prompt')
+        num_questions = int(request.POST.get('num_questions', 5))
+        
+        if not topic_prompt:
+            messages.error(request, "Please enter a topic prompt.")
+            return render(request, 'home/generate_questions.html', {'category': category})
+
+        # Call the generator function (this can take a few seconds)
+        success_count, error_message = generate_and_save_questions(
+            category_id, 
+            topic_prompt, 
+            num_questions
+        )
+
+        if error_message:
+            messages.error(request, f"Error generating questions: {error_message}")
+        elif success_count > 0:
+            messages.success(request, f"Successfully generated and saved {success_count} questions for '{category.name}'.")
+            
+        # Redirect back to the question management page (assuming a URL named 'manage_questions')
+        # Replace 'manage_questions' with the correct name if needed.
+        return redirect('add_question', category_id=category.id)
+
+    return render(request, 'home/generate_questions.html', {'category': category})
 
 # Check if user is staff/admin
 def is_staff_user(user):
