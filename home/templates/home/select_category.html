@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Category - Assessment Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            transition: background-color 0.5s, color 0.5s;
+        }
+        .category-card {
+            transition: all 0.3s ease;
+        }
+        .category-card:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-blue': '#4f46e5',
+                        'primary-dark': '#3730a3',
+                        'accent-green': '#10b981',
+                    }
+                }
+            }
+        }
+
+        function updateThemeIcon(theme) {
+            const toggleButton = document.getElementById('theme-toggle');
+            if (!toggleButton) return;
+            if (theme === 'dark') {
+                toggleButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M10 2c-3.738 0-6.877 2.553-7.771 6.002C1.564 12.33 3.65 17 7.5 17h9c4.142 0 7.5-3.358 7.5-7.5 0-4.004-3.138-7.246-7.001-7.498C15.823 2.146 13.93 2 12 2c-2.451 0-4.698.817-6.574 2.188A8.002 8.002 0 0110 2z"/></svg>';
+            } else {
+                toggleButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>';
+            }
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            if(savedTheme === 'dark') document.documentElement.classList.add('dark');
+            updateThemeIcon(savedTheme);
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateThemeIcon(isDark ? 'dark' : 'light');
+        }
+
+        window.onload = initTheme;
+    </script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 text-gray-900 dark:text-gray-100">
+
+    <!-- Theme Toggle -->
+    <div class="fixed top-4 right-4 z-50">
+        <button id="theme-toggle" onclick="toggleDarkMode()"
+                class="p-2 rounded-full text-gray-600 dark:text-blue-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition duration-200">
+        </button>
+    </div>
+
+    <!-- Back to Dashboard -->
+    <div class="fixed top-4 left-4 z-50">
+        <a href="{% url 'dashboard' %}" 
+           class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-lg transition duration-200">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Dashboard
+        </a>
+    </div>
+
+    <div class="container mx-auto px-4 py-8 max-w-6xl pt-20">
+        
+        <!-- Header -->
+        <header class="text-center mb-10 bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl">
+            <div class="w-16 h-16 bg-primary-blue/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-primary-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                </svg>
+            </div>
+            <h1 class="text-4xl font-extrabold text-gray-800 dark:text-gray-100 mb-2">
+                Select a <span class="text-primary-blue">Category</span>
+            </h1>
+            <p class="text-gray-500 dark:text-gray-400 text-lg">
+                Choose the category you'd like to be assessed on
+            </p>
+        </header>
+
+        <!-- Categories Grid -->
+        {% if categories %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {% for category in categories %}
+            <a href="{% url 'start_quiz' category.id %}" 
+               class="category-card block bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-2xl p-6 border-l-4 border-primary-blue">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="w-12 h-12 bg-primary-blue/10 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-primary-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                        </svg>
+                    </div>
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </div>
+                
+                <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">
+                    {{ category.name }}
+                </h3>
+                
+                <div class="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                    <div class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>{{ category.question_count }} question{{ category.question_count|pluralize }}</span>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <span class="text-sm font-semibold text-primary-blue">Start Assessment →</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-12 text-center">
+            <svg class="w-20 h-20 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            <h3 class="text-2xl font-bold text-gray-700 dark:text-gray-300 mb-2">No Categories Available</h3>
+            <p class="text-gray-500 dark:text-gray-400 mb-6">
+                There are currently no assessment categories available. Please check back later or contact your administrator.
+            </p>
+            <a href="{% url 'dashboard' %}" 
+               class="inline-flex items-center gap-2 px-6 py-3 bg-primary-blue hover:bg-primary-dark text-white rounded-lg transition duration-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Back to Dashboard
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Info Box -->
+        <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
+            <div class="flex items-start gap-3">
+                <svg class="w-6 h-6 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <div>
+                    <h3 class="text-sm font-bold text-blue-800 dark:text-blue-300 mb-2">📋 Before You Start:</h3>
+                    <ul class="text-sm text-blue-700 dark:text-blue-400 space-y-1">
+                        <li>• Make sure you have a stable internet connection</li>
+                        <li>• Answer all questions to the best of your ability</li>
+                        <li>• Your progress will be automatically saved</li>
+                        <li>• You can review your answers after submission</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

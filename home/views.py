@@ -8,11 +8,7 @@ from django.db.models import Avg, Max, Count
 from .models import Category, Question, QuizAttempt
 import random
 from datetime import datetime, timedelta
-# Add these imports and views to home/views.py
-
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib import messages
-from django.shortcuts import render, redirect, get_object_or_404
 
 # Check if user is staff/admin
 def is_staff_user(user):
@@ -106,6 +102,51 @@ def delete_category(request, category_id):
         'attempt_count': attempt_count,
     }
     return render(request, 'home/delete_category.html', context)
+
+@user_passes_test(is_staff_user)
+def add_question(request, category_id):
+    """Add a new question to a category (Admin only)"""
+    category = get_object_or_404(Category, id=category_id)
+    
+    if request.method == 'POST':
+        question_text = request.POST.get('question_text', '').strip()
+        option_a = request.POST.get('option_a', '').strip()
+        option_b = request.POST.get('option_b', '').strip()
+        option_c = request.POST.get('option_c', '').strip()
+        option_d = request.POST.get('option_d', '').strip()
+        correct_option = request.POST.get('correct_option', '').strip()
+        
+        # Validation
+        if not all([question_text, option_a, option_b, option_c, option_d, correct_option]):
+            messages.error(request, 'All fields are required')
+            return render(request, 'home/add_question.html', {'category': category})
+        
+        if correct_option not in ['A', 'B', 'C', 'D']:
+            messages.error(request, 'Correct option must be A, B, C, or D')
+            return render(request, 'home/add_question.html', {'category': category})
+        
+        try:
+            Question.objects.create(
+                category=category,
+                question_text=question_text,
+                option_a=option_a,
+                option_b=option_b,
+                option_c=option_c,
+                option_d=option_d,
+                correct_option=correct_option
+            )
+            messages.success(request, f'Question added successfully to {category.name}!')
+            
+            # Check if user wants to add another question
+            if request.POST.get('add_another'):
+                return redirect('add_question', category_id=category_id)
+            else:
+                return redirect('manage_categories')
+                
+        except Exception as e:
+            messages.error(request, f'Error adding question: {str(e)}')
+    
+    return render(request, 'home/add_question.html', {'category': category})
 
 # ==================== DASHBOARD & QUIZ VIEWS ====================
 
@@ -204,6 +245,11 @@ def start_quiz(request, category_id):
     """Start a quiz for selected category"""
     category = get_object_or_404(Category, id=category_id)
     questions = list(Question.objects.filter(category=category))
+    
+    # Check if category has questions
+    if not questions:
+        messages.error(request, f'No questions available for {category.name} yet.')
+        return redirect('select_category')
     
     # Shuffle questions for randomness
     random.shuffle(questions)
