@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Dashboard</title>
+    <title>{{ display_name }}'s Dashboard</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -16,6 +16,12 @@
         .progress-bar {
             transition: width 1s ease-out;
         }
+        .stat-card {
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-4px);
+        }
     </style>
     <script>
         tailwind.config = {
@@ -23,18 +29,16 @@
             theme: {
                 extend: {
                     colors: {
-                        // Custom colors defined here to be available as utilities (e.g., bg-primary-blue)
-                        'primary-blue': '#4f46e5', // indigo-600 equivalent
-                        'primary-dark': '#3730a3', // indigo-800 equivalent
-                        'accent-green': '#10b981', // emerald-500 equivalent
-                        'accent-yellow': '#f59e0b', // amber-500 equivalent
-                        'accent-red': '#ef4444', // red-500 equivalent
+                        'primary-blue': '#4f46e5',
+                        'primary-dark': '#3730a3',
+                        'accent-green': '#10b981',
+                        'accent-yellow': '#f59e0b',
+                        'accent-red': '#ef4444',
                     }
                 }
             }
         }
 
-        // Dark mode logic (Integrated from Login Canvas)
         function updateThemeIcon(theme) {
             const toggleButton = document.getElementById('theme-toggle');
             if (!toggleButton) return;
@@ -61,157 +65,244 @@
             updateThemeIcon(newTheme);
         }
 
-        // Simulated Student Data
-        const studentData = {
-            name: "Sujit Kumar Sha",
-            id: "S1234567",
-            averageScore: 85.5,
-            assessmentsTaken: 12,
-            recentScores: [
-                { title: "OOP Quiz 3", score: 92, date: "Oct 18, 2025" },
-                { title: "DLD Midterm", score: 78, date: "Oct 10, 2025" },
-                { title: "Python Lab Report", score: 86, date: "Sep 29, 2025" },
-                { title: "DSA", score: 90, date: "Sep 20, 2025" }
-            ],
-            subjectPerformance: [
-                { subject: "OOP", score: 88 },
-                { subject: "DBMS", score: 85 },
-                { subject: "CN", score: 79 },
-                { subject: "DAA", score: 91 },
-            ]
-        };
-
         function getScoreColor(score) {
-            // Uses custom colors defined in tailwind.config
             if(score >= 90) return 'bg-accent-green';
             if(score >= 80) return 'bg-accent-yellow';
             return 'bg-accent-red';
         }
 
-        function renderDashboard() {
-            document.getElementById('student-name').textContent = studentData.name;
-            document.getElementById('avg-score').textContent = studentData.averageScore.toFixed(1) + '%';
-            document.getElementById('assessments-taken').textContent = studentData.assessmentsTaken;
+        function getScoreTextColor(score) {
+            if(score >= 90) return 'text-accent-green';
+            if(score >= 80) return 'text-accent-yellow';
+            return 'text-accent-red';
+        }
 
-            // Subject performance bars
-            const performanceContainer = document.getElementById('subject-performance');
-            let performanceHtml = '';
-            studentData.subjectPerformance.forEach(item => {
-                const width = item.score;
-                const colorClass = getScoreColor(item.score);
-                performanceHtml += `
-                    <div class="mb-4">
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">${item.subject}</span>
-                            <span class="text-sm font-bold text-gray-800 dark:text-gray-200">${item.score}%</span>
-                        </div>
-                        <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2.5 shadow-inner shadow-gray-300/50 dark:shadow-gray-900/50">
-                            <div class="progress-bar h-2.5 rounded-full ${colorClass}" style="width: ${width}%"></div>
-                        </div>
-                    </div>
-                `;
-            });
-            performanceContainer.innerHTML = performanceHtml;
-
-            // Recent scores
-            const scoresContainer = document.getElementById('recent-scores');
-            let scoresHtml = '';
-            studentData.recentScores.forEach(item => {
-                // Remove 'bg-' prefix and apply as text color (e.g., text-accent-green)
-                const colorClass = getScoreColor(item.score).replace('bg-', 'text-');
-                scoresHtml += `
-                    <div class="flex justify-between items-center border-b border-gray-100 dark:border-gray-600 last:border-b-0 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition duration-150 rounded-lg -mx-3 px-3">
-                        <div class="flex flex-col">
-                            <span class="font-semibold text-gray-800 dark:text-gray-200">${item.title}</span>
-                            <span class="text-xs text-gray-500 dark:text-gray-400">${item.date}</span>
-                        </div>
-                        <span class="text-xl font-extrabold ${colorClass}">${item.score}%</span>
-                    </div>
-                `;
-            });
-            scoresContainer.innerHTML = scoresHtml;
+        function getGreeting() {
+            const hour = new Date().getHours();
+            if (hour < 12) return 'Good Morning';
+            if (hour < 18) return 'Good Afternoon';
+            return 'Good Evening';
         }
 
         window.onload = function() {
-            initTheme(); // Initializes theme and theme icon
-            renderDashboard(); // Renders dynamic data
+            initTheme();
+            document.getElementById('greeting').textContent = getGreeting();
+            
+            // Apply colors and widths to progress bars
+            const progressBars = document.querySelectorAll('[data-score]');
+            progressBars.forEach(bar => {
+                const score = parseFloat(bar.getAttribute('data-score'));
+                bar.style.width = score + '%';
+                bar.classList.add(getScoreColor(score));
+            });
+            
+            const scoreTexts = document.querySelectorAll('[data-score-text]');
+            scoreTexts.forEach(text => {
+                const score = parseFloat(text.getAttribute('data-score-text'));
+                text.classList.add(getScoreTextColor(score));
+            });
         };
     </script>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+<body class="bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 text-gray-900 dark:text-gray-100">
 
-    <!-- Theme Toggle (Styled for Transparency and Icon) -->
+    <!-- Theme Toggle -->
     <div class="fixed top-4 right-4 z-50">
         <button id="theme-toggle" onclick="toggleDarkMode()"
                 class="p-2 rounded-full text-gray-600 dark:text-blue-300
                        hover:bg-gray-200 dark:hover:bg-gray-700 transition duration-200"
                 aria-label="Toggle Theme">
-            <!-- Icon is dynamically inserted here -->
         </button>
     </div>
 
-    <div class="container mx-auto px-4 py-8 sm:px-6 lg:px-8 max-w-6xl">
-        <!-- Header -->
-        <header class="mb-8 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg border-b-4 border-primary-blue">
-            <h1 class="text-4xl font-extrabold text-gray-800 dark:text-gray-100">
-                Welcome Back, <span id="student-name" class="text-primary-blue dark:text-primary-blue"></span>!
-            </h1>
-            <p class="text-gray-500 dark:text-gray-300 mt-1">Your snapshot of recent assessment performance.</p>
+    <!-- Logout Button -->
+    <div class="fixed top-4 left-4 z-50">
+        <a href="{% url 'landing_page' %}" 
+           class="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-lg transition duration-200">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+            </svg>
+            Logout
+        </a>
+    </div>
+
+    <div class="container mx-auto px-4 py-8 sm:px-6 lg:px-8 max-w-7xl pt-20">
+        
+        <!-- Personalized Header -->
+        <header class="mb-8 p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border-l-4 border-primary-blue">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div>
+                    <h1 class="text-5xl font-extrabold text-gray-800 dark:text-gray-100">
+                        <span id="greeting">Welcome</span>, 
+                        <span class="text-primary-blue">{{ display_name }}</span>!
+                    </h1>
+                    <p class="text-gray-600 dark:text-gray-300 mt-2 text-lg">
+                        {% if user.email %}
+                            {{ user.email }}
+                        {% else %}
+                            @{{ user.username }}
+                        {% endif %}
+                    </p>
+                    <p class="text-gray-500 dark:text-gray-400 mt-1">
+                        Member since {{ user.date_joined|date:"F Y" }}
+                    </p>
+                </div>
+                
+                {% if improvement_trend == 'improving' %}
+                <div class="mt-4 md:mt-0 flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                    <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                    </svg>
+                    <span class="font-semibold text-green-700 dark:text-green-300">Trending Up!</span>
+                </div>
+                {% endif %}
+            </div>
         </header>
 
-        <!-- Metrics Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            <!-- Average Score Card -->
-            <div class="bg-white dark:bg-gray-700 p-6 rounded-xl shadow-lg border-l-4 border-accent-green hover:shadow-xl transition duration-300">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-accent-green/10 text-accent-green mr-4">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                    </div>
+        <!-- Key Statistics Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            
+            <!-- Total Assessments -->
+            <div class="stat-card bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-l-4 border-blue-500">
+                <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-300">Overall Average Score</p>
-                        <p id="avg-score" class="text-3xl font-bold text-gray-900 dark:text-gray-100"></p>
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Assessments</p>
+                        <p class="text-4xl font-bold text-gray-900 dark:text-gray-100 mt-2">{{ total_attempts }}</p>
+                    </div>
+                    <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                        <svg class="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
                     </div>
                 </div>
             </div>
 
-            <!-- Assessments Taken Card -->
-            <div class="bg-white dark:bg-gray-700 p-6 rounded-xl shadow-lg border-l-4 border-primary-blue hover:shadow-xl transition duration-300">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-primary-blue/10 text-primary-blue mr-4">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    </div>
+            <!-- Average Score -->
+            <div class="stat-card bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-l-4 border-accent-green">
+                <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-300">Assessments Taken</p>
-                        <p id="assessments-taken" class="text-3xl font-bold text-gray-900 dark:text-gray-100"></p>
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Average Score</p>
+                        <p class="text-4xl font-bold text-accent-green mt-2">{{ average_score }}%</p>
+                    </div>
+                    <div class="p-3 rounded-full bg-green-100 dark:bg-green-900/30">
+                        <svg class="w-8 h-8 text-accent-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
                     </div>
                 </div>
             </div>
 
-            <!-- New Assessment Action Card -->
-            <div class="bg-primary-blue p-6 rounded-xl shadow-lg hover:shadow-primary-dark/50 transition duration-300 flex flex-col justify-center">
-    <a href="{% url 'select_category' %}" class="text-white text-center">
-        <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        <p class="text-lg font-semibold">Start New Assessment</p>
-        <p class="text-xs opacity-70">Choose a category to begin</p>
-    </a>
-</div>
+            <!-- Highest Score -->
+            <div class="stat-card bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-l-4 border-yellow-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Highest Score</p>
+                        <p class="text-4xl font-bold text-yellow-600 dark:text-yellow-400 mt-2">{{ highest_score }}%</p>
+                        {% if best_category %}
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">in {{ best_category }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900/30">
+                        <svg class="w-8 h-8 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Start New Assessment -->
+            <div class="stat-card bg-gradient-to-br from-primary-blue to-indigo-600 p-6 rounded-xl shadow-lg hover:shadow-2xl cursor-pointer">
+                <a href="{% url 'select_category' %}" class="block h-full text-white">
+                    <div class="flex flex-col items-center justify-center h-full text-center">
+                        <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <p class="text-lg font-bold">Start New Assessment</p>
+                        <p class="text-sm opacity-90 mt-1">Choose a category</p>
+                    </div>
+                </a>
+            </div>
         </div>
 
         <!-- Detailed Performance Section -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
             <!-- Subject Performance -->
-            <div class="bg-white dark:bg-gray-700 p-6 rounded-xl shadow-lg">
-                <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 border-b border-gray-100 dark:border-gray-600 pb-2">Subject Performance Breakdown</h2>
-                <div id="subject-performance"></div>
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-primary-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    Your Performance by Subject
+                </h2>
+                
+                {% if subject_performance %}
+                <div class="space-y-5">
+                    {% for perf in subject_performance %}
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{ perf.subject }}</span>
+                            <div class="flex items-center gap-3">
+                                <span class="text-xs text-gray-500 dark:text-gray-400">{{ perf.attempts }} attempt{{ perf.attempts|pluralize }}</span>
+                                <span class="text-sm font-bold text-gray-800 dark:text-gray-200">{{ perf.score }}%</span>
+                            </div>
+                        </div>
+                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 shadow-inner">
+                            <div class="progress-bar h-3 rounded-full" 
+                                 data-score="{{ perf.score }}"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <svg class="w-16 h-16 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <p>No assessments yet</p>
+                    <p class="text-sm mt-1">Start your first quiz to see your performance!</p>
+                </div>
+                {% endif %}
             </div>
 
             <!-- Recent Scores -->
-            <div class="bg-white dark:bg-gray-700 p-6 rounded-xl shadow-lg">
-                <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 border-b border-gray-100 dark:border-gray-600 pb-2">Latest Scores</h2>
-                <div id="recent-scores" class="divide-y divide-gray-100 dark:divide-gray-600"></div>
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-primary-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Recent Assessment History
+                </h2>
+                
+                {% if recent_attempts %}
+                <div class="space-y-3">
+                    {% for attempt in recent_attempts %}
+                    <div class="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition duration-200">
+                        <div class="flex-1">
+                            <p class="font-semibold text-gray-800 dark:text-gray-200">{{ attempt.title }}</p>
+                            <div class="flex items-center gap-2 mt-1">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                <span class="text-xs text-gray-500 dark:text-gray-400">{{ attempt.date }}</span>
+                            </div>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ attempt.raw_score }} correct</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-2xl font-extrabold" data-score-text="{{ attempt.score }}">{{ attempt.score }}%</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <svg class="w-16 h-16 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <p>No recent activity</p>
+                    <p class="text-sm mt-1">Take an assessment to build your history!</p>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
