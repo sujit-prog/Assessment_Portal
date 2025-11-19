@@ -10,4 +10,9 @@ urlpatterns = [
          path('result/', views.result_page, name='result_page'),
           path('subjects/result/<int:attempt_id>/', views.quiz_result, name='quiz_result'),
           path('result/<int:attempt_id>/', views.quiz_result, name='quiz_result'),
+          path('manage-categories/', views.manage_categories, name='manage_categories'),
+    path('add-category/', views.add_category, name='add_category'),
+    path('edit-category/<int:category_id>/', views.edit_category, name='edit_category'),
+    path('delete-category/<int:category_id>/', views.delete_category, name='delete_category'),
 ]
+

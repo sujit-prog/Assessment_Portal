@@ -8,6 +8,104 @@ from django.db.models import Avg, Max, Count
 from .models import Category, Question, QuizAttempt
 import random
 from datetime import datetime, timedelta
+# Add these imports and views to home/views.py
+
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib import messages
+from django.shortcuts import render, redirect, get_object_or_404
+
+# Check if user is staff/admin
+def is_staff_user(user):
+    return user.is_staff or user.is_superuser
+
+@user_passes_test(is_staff_user)
+def manage_categories(request):
+    """View and manage all categories (Admin only)"""
+    categories = Category.objects.all().annotate(
+        question_count=Count('questions'),
+        attempt_count=Count('quizattempt')
+    ).order_by('name')
+    
+    context = {
+        'categories': categories,
+    }
+    return render(request, 'home/manage_categories.html', context)
+
+@user_passes_test(is_staff_user)
+def add_category(request):
+    """Add a new category (Admin only)"""
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        
+        if not name:
+            messages.error(request, 'Category name is required')
+            return render(request, 'home/add_category.html')
+        
+        # Check if category already exists
+        if Category.objects.filter(name__iexact=name).exists():
+            messages.error(request, f'Category "{name}" already exists')
+            return render(request, 'home/add_category.html')
+        
+        try:
+            Category.objects.create(name=name)
+            messages.success(request, f'Category "{name}" added successfully!')
+            return redirect('manage_categories')
+        except Exception as e:
+            messages.error(request, f'Error adding category: {str(e)}')
+    
+    return render(request, 'home/add_category.html')
+
+@user_passes_test(is_staff_user)
+def edit_category(request, category_id):
+    """Edit an existing category (Admin only)"""
+    category = get_object_or_404(Category, id=category_id)
+    
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        
+        if not name:
+            messages.error(request, 'Category name is required')
+            return render(request, 'home/edit_category.html', {'category': category})
+        
+        # Check if another category with this name exists
+        if Category.objects.filter(name__iexact=name).exclude(id=category_id).exists():
+            messages.error(request, f'Category "{name}" already exists')
+            return render(request, 'home/edit_category.html', {'category': category})
+        
+        try:
+            category.name = name
+            category.save()
+            messages.success(request, f'Category updated to "{name}"')
+            return redirect('manage_categories')
+        except Exception as e:
+            messages.error(request, f'Error updating category: {str(e)}')
+    
+    return render(request, 'home/edit_category.html', {'category': category})
+
+@user_passes_test(is_staff_user)
+def delete_category(request, category_id):
+    """Delete a category (Admin only)"""
+    category = get_object_or_404(Category, id=category_id)
+    
+    if request.method == 'POST':
+        category_name = category.name
+        try:
+            category.delete()
+            messages.success(request, f'Category "{category_name}" deleted successfully')
+        except Exception as e:
+            messages.error(request, f'Error deleting category: {str(e)}')
+        return redirect('manage_categories')
+    
+    # Get related data for confirmation
+    question_count = Question.objects.filter(category=category).count()
+    attempt_count = QuizAttempt.objects.filter(category=category).count()
+    
+    context = {
+        'category': category,
+        'question_count': question_count,
+        'attempt_count': attempt_count,
+    }
+    return render(request, 'home/delete_category.html', context)
 
 # ==================== DASHBOARD & QUIZ VIEWS ====================
 
