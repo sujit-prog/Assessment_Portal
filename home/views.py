@@ -11,10 +11,13 @@ from datetime import datetime, timedelta
 from django.contrib.auth.decorators import login_required, user_passes_test
 
 # Check if user is staff/admin
+def is_teacher(user):
+    return user.is_superuser and user.is_staff
+
 def is_staff_user(user):
     return user.is_staff or user.is_superuser
 
-@user_passes_test(is_staff_user)
+@user_passes_test(is_staff_user, is_teacher)
 def manage_categories(request):
     """View and manage all categories (Admin only)"""
     categories = Category.objects.all().annotate(
@@ -27,7 +30,7 @@ def manage_categories(request):
     }
     return render(request, 'home/manage_categories.html', context)
 
-@user_passes_test(is_staff_user)
+@user_passes_test(is_staff_user,is_teacher)
 def add_category(request):
     """Add a new category (Admin only)"""
     if request.method == 'POST':
