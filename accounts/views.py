@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 from django.contrib import messages
 
+
 # Landing Page
 def landing_page(request):
     return render(request, 'accounts/home.html')
@@ -29,7 +30,7 @@ def login_view(request):
     return render(request, 'accounts/login.html')
 
 
-# Registration View - FIXED to match HTML form field names
+# Registration View - UPDATED with proper user_type handling
 def register(request):
     if request.method == 'POST':
         name = request.POST.get('name')
@@ -37,7 +38,9 @@ def register(request):
         email = request.POST.get('email')
         password = request.POST.get('password')
         confirm_password = request.POST.get('confirm-password')
+        user_type = request.POST.get('user_type', 'student')  # Get user type from form
 
+        # Validation
         if not name or not username or not email or not password:
             messages.error(request, "All fields are required")
             return render(request, 'accounts/register.html')
@@ -54,15 +57,27 @@ def register(request):
             messages.error(request, "Email already taken")
             return render(request, 'accounts/register.html')
 
+        # Create user
         user = User.objects.create_user(
             username=username,
             email=email,
             password=password,
             first_name=name
         )
-        user.save()
 
-        messages.success(request, "Registration successful! Please login.")
+        # Set permissions based on user_type
+        if user_type == "teacher":
+            user.is_staff = True
+            user.is_superuser = True
+            user.save()
+            messages.success(request, "Teacher account created successfully! You now have admin privileges. Please login.")
+        else:
+            # Student account (default)
+            user.is_staff = False
+            user.is_superuser = False
+            user.save()
+            messages.success(request, "Student account created successfully! Please login.")
+        
         return redirect('login')
 
     return render(request, 'accounts/register.html')

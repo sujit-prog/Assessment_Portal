@@ -37,6 +37,16 @@ class QuizAttempt(models.Model):
     score = models.IntegerField()
     total = models.IntegerField()
     timestamp = models.DateTimeField(auto_now_add=True)
-
+    on_delete=models.CASCADE
     def __str__(self):
         return f"{self.user.username} - {self.category.name} - Score: {self.score}/{self.total} at {self.timestamp}"
+    
+    class Profile_Type(models.Model):
+        user = models.OneToOneField(User, on_delete=models.CASCADE)
+        role = models.CharField(max_length=10, choices=[
+        ('teacher', 'Teacher'),
+        ('student', 'Student')
+    ])
+
+    def __str__(self):
+        return self.user.username

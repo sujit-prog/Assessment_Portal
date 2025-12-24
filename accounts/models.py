@@ -1,6 +1,7 @@
 from django.db import models
 import uuid
 import random
+from django.contrib.auth.models import User
 
 # Create your models here.
 class BaseModel(models.Model):
@@ -52,3 +53,12 @@ class Answer(BaseModel):
     def __str__(self):
         return self.answer
 
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    role = models.CharField(max_length=10, choices=[
+        ('teacher', 'Teacher'),
+        ('student', 'Student')
+    ])
+
+    def __str__(self):
+        return self.user.username
