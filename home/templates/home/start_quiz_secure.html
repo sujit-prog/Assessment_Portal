@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ category.name }} Quiz - Secure Mode</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#4f46e5',
+                        'secondary': '#eef2ff',
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Prevent text selection */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        /* Disable right-click context menu styling */
+        .no-context-menu {
+            pointer-events: auto;
+        }
+        
+        /* Custom radio button styling */
+        .option-label input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .option-label input[type="radio"]:checked + .custom-radio {
+            background-color: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dark .option-label input[type="radio"]:checked + .custom-radio {
+            background-color: #4f46e5;
+            border-color: #4f46e5;
+        }
+        
+        /* Fullscreen indicator */
+        #fullscreen-warning {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            z-index: 9999;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        
+        /* Warning modal */
+        .warning-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .warning-modal.active {
+            display: flex;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen p-4 sm:p-8 transition-colors duration-300">
+
+    <!-- Fullscreen Warning Banner -->
+    <div id="fullscreen-warning">
+        ⚠️ Please return to fullscreen mode! Tab switches and exits are being monitored.
+    </div>
+
+    <!-- Initial Warning Modal -->
+    <div id="warning-modal" class="warning-modal active">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-2xl mx-4 shadow-2xl">
+            <div class="text-center mb-6">
+                <div class="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-12 h-12 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">Secure Assessment Mode</h2>
+                <p class="text-gray-600 dark:text-gray-400">Please read carefully before starting</p>
+            </div>
+            
+            <div class="bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-400 dark:border-yellow-700 rounded-xl p-6 mb-6">
+                <h3 class="font-bold text-lg text-gray-800 dark:text-white mb-4">📋 Assessment Rules:</h3>
+                <ul class="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+                    <li class="flex items-start gap-2">
+                        <svg class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span><strong>Fullscreen Mode Required:</strong> You must stay in fullscreen for the entire quiz</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <svg class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                        </svg>
+                        <span><strong>No Tab Switching:</strong> Switching tabs or windows will be detected and logged</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <svg class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                        </svg>
+                        <span><strong>Copy/Paste Disabled:</strong> Text selection and copying are disabled</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <svg class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        <span><strong>Right-Click Disabled:</strong> Context menu is disabled during the quiz</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <svg class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                        </svg>
+                        <span><strong>Activity Monitored:</strong> All violations are recorded in your attempt</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="flex items-center gap-3 mb-6">
+                <input type="checkbox" id="agree-checkbox" class="w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary">
+                <label for="agree-checkbox" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    I understand and agree to follow all assessment rules
+                </label>
+            </div>
+            
+            <button 
+                id="start-quiz-btn" 
+                disabled
+                class="w-full py-4 px-6 bg-primary hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg transition duration-200 text-lg">
+                Start Quiz in Fullscreen
+            </button>
+            
+            <p class="text-center text-xs text-gray-500 dark:text-gray-400 mt-4">
+                By starting, you consent to activity monitoring for academic integrity
+            </p>
+        </div>
+    </div>
+
+    <div class="max-w-4xl mx-auto" id="quiz-content" style="display: none;">
+        
+        <!-- Header Section -->
+        <header class="text-center mb-10 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg relative transition-colors duration-300">
+            <!-- Security Status Indicator -->
+            <div class="absolute top-4 left-4 flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/30 rounded-full text-xs font-semibold text-green-700 dark:text-green-300">
+                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                Secure Mode Active
+            </div>
+            
+            <!-- Theme Toggle Button -->
+            <button id="theme-toggle" type="button" class="absolute top-4 right-4 p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none transition-colors duration-300">
+                <svg id="sun-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+                <svg id="moon-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                </svg>
+            </button>
+            
+            <h1 class="text-4xl font-extrabold text-gray-800 dark:text-white tracking-tight transition-colors duration-300">
+                {{ category.name }} Quiz
+            </h1>
+            <p class="mt-2 text-lg text-gray-500 dark:text-gray-400 transition-colors duration-300">Answer all questions to the best of your ability</p>
+            
+            <!-- Violation Counter -->
+            <div class="mt-4 flex justify-center gap-4 text-sm">
+                <div class="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full">
+                    <span class="text-gray-600 dark:text-gray-400">Tab Switches:</span>
+                    <span id="tab-switches" class="font-bold text-red-600 dark:text-red-400 ml-1">0</span>
+                </div>
+                <div class="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full">
+                    <span class="text-gray-600 dark:text-gray-400">Fullscreen Exits:</span>
+                    <span id="fullscreen-exits" class="font-bold text-red-600 dark:text-red-400 ml-1">0</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Quiz Form -->
+        <form method="post" action="{% url 'start_quiz' category.id %}" id="quiz-form">
+            {% csrf_token %}
+            
+            <!-- Hidden fields to track violations -->
+            <input type="hidden" name="tab_switches" id="tab-switches-input" value="0">
+            <input type="hidden" name="fullscreen_exits" id="fullscreen-exits-input" value="0">
+            
+            {% for q in questions %}
+            <!-- Question Box -->
+            <div class="question-box bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl border-t-4 border-primary transition duration-300 hover:shadow-2xl mb-6">
+                <p class="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-200 transition-colors duration-300">
+                    <span class="text-primary mr-2">Q{{ forloop.counter }}:</span> {{ q.question_text }}
+                </p>
+
+                <div class="space-y-3">
+                    <!-- Option A -->
+                    <label class="option-label relative block cursor-pointer">
+                        <input type="radio" name="q{{ q.id }}" value="A" required>
+                        <div class="custom-radio bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-secondary dark:hover:bg-primary/20 hover:border-primary transition duration-200">
+                            <span class="font-medium mr-2 text-primary">A)</span> {{ q.option_a }}
+                        </div>
+                    </label>
+
+                    <!-- Option B -->
+                    <label class="option-label relative block cursor-pointer">
+                        <input type="radio" name="q{{ q.id }}" value="B" required>
+                        <div class="custom-radio bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-secondary dark:hover:bg-primary/20 hover:border-primary transition duration-200">
+                            <span class="font-medium mr-2 text-primary">B)</span> {{ q.option_b }}
+                        </div>
+                    </label>
+
+                    <!-- Option C -->
+                    <label class="option-label relative block cursor-pointer">
+                        <input type="radio" name="q{{ q.id }}" value="C" required>
+                        <div class="custom-radio bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-secondary dark:hover:bg-primary/20 hover:border-primary transition duration-200">
+                            <span class="font-medium mr-2 text-primary">C)</span> {{ q.option_c }}
+                        </div>
+                    </label>
+
+                    <!-- Option D -->
+                    <label class="option-label relative block cursor-pointer">
+                        <input type="radio" name="q{{ q.id }}" value="D" required>
+                        <div class="custom-radio bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-secondary dark:hover:bg-primary/20 hover:border-primary transition duration-200">
+                            <span class="font-medium mr-2 text-primary">D)</span> {{ q.option_d }}
+                        </div>
+                    </label>
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center bg-yellow-50 dark:bg-yellow-900/50 p-6 rounded-lg border border-yellow-200 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200 shadow-md transition-colors duration-300">
+                <p class="font-semibold text-lg">No questions found for this category.</p>
+            </div>
+            {% endfor %}
+
+            {% if questions %}
+            <!-- Submit Button -->
+            <div class="pt-4 flex justify-center">
+                <button type="submit" class="w-full sm:w-auto px-10 py-3 text-lg font-bold bg-primary text-white rounded-full shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50 transition duration-150 transform hover:scale-[1.02]">
+                    Submit Quiz
+                </button>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+
+    <script>
+        // Security tracking variables
+        let tabSwitches = 0;
+        let fullscreenExits = 0;
+        let quizStarted = false;
+        
+        // Theme management
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const sunIcon = document.getElementById('sun-icon');
+        const moonIcon = document.getElementById('moon-icon');
+
+        function setTheme(isDark) {
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('color-theme', 'dark');
+                sunIcon?.classList.remove('hidden');
+                moonIcon?.classList.add('hidden');
+            } else {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('color-theme', 'light');
+                sunIcon?.classList.add('hidden');
+                moonIcon?.classList.remove('hidden');
+            }
+        }
+
+        const savedTheme = localStorage.getItem('color-theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        setTheme(savedTheme === 'dark' || (!savedTheme && prefersDark));
+
+        themeToggleBtn?.addEventListener('click', () => {
+            const isCurrentlyDark = document.documentElement.classList.contains('dark');
+            setTheme(!isCurrentlyDark);
+        });
+
+        // Disable right-click
+        document.addEventListener('contextmenu', (e) => {
+            if (quizStarted) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        // Disable copy, cut, paste
+        document.addEventListener('copy', (e) => {
+            if (quizStarted) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        document.addEventListener('cut', (e) => {
+            if (quizStarted) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        document.addEventListener('paste', (e) => {
+            if (quizStarted) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        // Disable keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (!quizStarted) return;
+            
+            // Disable F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+            if (e.keyCode === 123 || 
+                (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) ||
+                (e.ctrlKey && e.keyCode === 85)) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Disable Ctrl+C, Ctrl+X, Ctrl+A (select all)
+            if (e.ctrlKey && (e.keyCode === 67 || e.keyCode === 88 || e.keyCode === 65)) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        // Track tab visibility changes
+        document.addEventListener('visibilitychange', () => {
+            if (quizStarted && document.hidden) {
+                tabSwitches++;
+                updateViolationCounters();
+                showWarningBanner();
+            }
+        });
+
+        // Track window blur (tab switching)
+        window.addEventListener('blur', () => {
+            if (quizStarted) {
+                tabSwitches++;
+                updateViolationCounters();
+                showWarningBanner();
+            }
+        });
+
+        // Track fullscreen changes
+        document.addEventListener('fullscreenchange', () => {
+            // Only track if quiz is active and user is intentionally leaving fullscreen
+            // Don't track during form submission
+            if (quizStarted && !document.fullscreenElement) {
+                fullscreenExits++;
+                updateViolationCounters();
+                showWarningBanner();
+            }
+        });
+
+        document.addEventListener('webkitfullscreenchange', () => {
+            // Only track if quiz is active and user is intentionally leaving fullscreen
+            // Don't track during form submission
+            if (quizStarted && !document.webkitFullscreenElement) {
+                fullscreenExits++;
+                updateViolationCounters();
+                showWarningBanner();
+            }
+        });
+
+        function updateViolationCounters() {
+            document.getElementById('tab-switches').textContent = tabSwitches;
+            document.getElementById('fullscreen-exits').textContent = fullscreenExits;
+            document.getElementById('tab-switches-input').value = tabSwitches;
+            document.getElementById('fullscreen-exits-input').value = fullscreenExits;
+        }
+
+        function showWarningBanner() {
+            const banner = document.getElementById('fullscreen-warning');
+            banner.style.display = 'block';
+            setTimeout(() => {
+                banner.style.display = 'none';
+            }, 5000);
+        }
+
+        // Enter fullscreen
+        function enterFullscreen() {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen();
+            } else if (elem.webkitRequestFullscreen) {
+                elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) {
+                elem.msRequestFullscreen();
+            }
+        }
+
+        // Agreement checkbox handler
+        const agreeCheckbox = document.getElementById('agree-checkbox');
+        const startQuizBtn = document.getElementById('start-quiz-btn');
+
+        agreeCheckbox?.addEventListener('change', (e) => {
+            startQuizBtn.disabled = !e.target.checked;
+        });
+
+        // Start quiz button handler
+        startQuizBtn?.addEventListener('click', () => {
+            enterFullscreen();
+            document.getElementById('warning-modal').classList.remove('active');
+            document.getElementById('quiz-content').style.display = 'block';
+            quizStarted = true;
+            
+            // Scroll to top
+            window.scrollTo(0, 0);
+        });
+
+        // Handle form submission - stop tracking violations during submission
+        document.getElementById('quiz-form')?.addEventListener('submit', (e) => {
+            // Stop tracking violations when submitting
+            quizStarted = false;
+            
+            // Exit fullscreen before submission to prevent browser blocking
+            if (document.fullscreenElement) {
+                document.exitFullscreen().catch(err => console.log('Fullscreen exit error:', err));
+            }
+            
+            // Allow form to submit normally without any warnings
+        });
+
+        // Warn before leaving page (only if quiz is still active)
+        window.addEventListener('beforeunload', (e) => {
+            if (quizStarted) {
+                e.preventDefault();
+                e.returnValue = 'Are you sure you want to leave? Your quiz progress may be lost.';
+                return e.returnValue;
+            }
+        });
+    </script>
+</body>
+</html>
