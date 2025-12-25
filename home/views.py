@@ -240,12 +240,14 @@ def dashboard(request):
 @login_required(login_url='login')
 def select_category(request):
     """Display available quiz categories"""
-    categories = Category.objects.all()
+    categories = Category.objects.all().annotate(
+        question_count=Count('questions')
+    )
     return render(request, 'home/select_category.html', {'categories': categories})
 
 @login_required(login_url='login')
 def start_quiz(request, category_id):
-    """Start a quiz for selected category"""
+    """Start a quiz for selected category with anti-cheating measures"""
     category = get_object_or_404(Category, id=category_id)
     questions = list(Question.objects.filter(category=category))
     
@@ -258,6 +260,16 @@ def start_quiz(request, category_id):
     random.shuffle(questions)
 
     if request.method == 'POST':
+        # Get security tracking data
+        tab_switches = int(request.POST.get('tab_switches', '0'))
+        fullscreen_exits = int(request.POST.get('fullscreen_exits', '0'))
+        
+        # Log suspicious activity if needed
+        if tab_switches > 3 or fullscreen_exits > 2:
+            messages.warning(request, 
+                f'⚠️ Warning: Unusual activity detected - {tab_switches} tab switches, '
+                f'{fullscreen_exits} fullscreen exits. This attempt has been flagged for review.')
+        
         score = 0
         total = len(questions)
         results = []
@@ -285,12 +297,15 @@ def start_quiz(request, category_id):
                 'is_correct': is_correct
             })
 
-        # Save quiz attempt with user
-        QuizAttempt.objects.create(
+        # Save quiz attempt with security tracking
+        attempt = QuizAttempt.objects.create(
             user=request.user,
             category=category,
             score=score,
-            total=total
+            total=total,
+            tab_switches=tab_switches,
+            fullscreen_exits=fullscreen_exits,
+            is_flagged=(tab_switches > 3 or fullscreen_exits > 2)
         )
 
         percentage = round((score / total) * 100, 1) if total > 0 else 0
@@ -303,7 +318,8 @@ def start_quiz(request, category_id):
             'results': results,
         })
 
-    return render(request, 'home/start_quiz.html', {
+    # UPDATED: Use secure quiz template instead of regular one
+    return render(request, 'home/start_quiz_secure.html', {
         'category': category,
         'questions': questions,
     })
