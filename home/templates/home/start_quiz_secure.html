@@ -71,6 +71,34 @@
             animation: pulse 2s infinite;
         }
         
+        /* Auto-submit countdown warning */
+        #auto-submit-warning {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(220, 38, 38, 0.98);
+            color: white;
+            padding: 2rem 3rem;
+            border-radius: 1rem;
+            z-index: 10001;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            min-width: 400px;
+        }
+        
+        #auto-submit-warning h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        #countdown-timer {
+            font-size: 4rem;
+            font-weight: bold;
+            margin: 1rem 0;
+        }
+        
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.8; }
@@ -100,6 +128,14 @@
     <!-- Fullscreen Warning Banner -->
     <div id="fullscreen-warning">
         ⚠️ Please return to fullscreen mode! Tab switches and exits are being monitored.
+    </div>
+
+    <!-- Auto-Submit Countdown Warning -->
+    <div id="auto-submit-warning">
+        <h2>⚠️ FULLSCREEN EXIT DETECTED!</h2>
+        <p style="font-size: 1.2rem; margin-bottom: 0.5rem;">Quiz will auto-submit in:</p>
+        <div id="countdown-timer">5</div>
+        <p style="font-size: 0.9rem; margin-top: 1rem; opacity: 0.9;">Return to fullscreen to cancel auto-submit</p>
     </div>
 
     <!-- Initial Warning Modal -->
@@ -281,6 +317,8 @@
         let tabSwitches = 0;
         let fullscreenExits = 0;
         let quizStarted = false;
+        let fullscreenExitTimer = null;
+        let autoSubmitCountdown = null;
         
         // Theme management
         const themeToggleBtn = document.getElementById('theme-toggle');
@@ -385,6 +423,11 @@
                 fullscreenExits++;
                 updateViolationCounters();
                 showWarningBanner();
+                // Start 5-second countdown to auto-submit
+                startAutoSubmitCountdown();
+            } else if (quizStarted && document.fullscreenElement) {
+                // User returned to fullscreen - cancel auto-submit
+                cancelAutoSubmit();
             }
         });
 
@@ -395,6 +438,11 @@
                 fullscreenExits++;
                 updateViolationCounters();
                 showWarningBanner();
+                // Start 5-second countdown to auto-submit
+                startAutoSubmitCountdown();
+            } else if (quizStarted && document.webkitFullscreenElement) {
+                // User returned to fullscreen - cancel auto-submit
+                cancelAutoSubmit();
             }
         });
 
@@ -411,6 +459,72 @@
             setTimeout(() => {
                 banner.style.display = 'none';
             }, 5000);
+        }
+        
+        function startAutoSubmitCountdown() {
+            // Clear any existing timer
+            if (fullscreenExitTimer) {
+                clearTimeout(fullscreenExitTimer);
+            }
+            if (autoSubmitCountdown) {
+                clearInterval(autoSubmitCountdown);
+            }
+            
+            // Show the auto-submit warning modal
+            const warningModal = document.getElementById('auto-submit-warning');
+            const countdownDisplay = document.getElementById('countdown-timer');
+            warningModal.style.display = 'block';
+            
+            let secondsLeft = 5;
+            countdownDisplay.textContent = secondsLeft;
+            
+            // Update countdown every second
+            autoSubmitCountdown = setInterval(() => {
+                secondsLeft--;
+                countdownDisplay.textContent = secondsLeft;
+                
+                if (secondsLeft <= 0) {
+                    clearInterval(autoSubmitCountdown);
+                    autoSubmitQuiz();
+                }
+            }, 1000);
+            
+            // Set the 5-second auto-submit timeout
+            fullscreenExitTimer = setTimeout(() => {
+                autoSubmitQuiz();
+            }, 5000);
+        }
+        
+        function cancelAutoSubmit() {
+            // Clear timers
+            if (fullscreenExitTimer) {
+                clearTimeout(fullscreenExitTimer);
+                fullscreenExitTimer = null;
+            }
+            if (autoSubmitCountdown) {
+                clearInterval(autoSubmitCountdown);
+                autoSubmitCountdown = null;
+            }
+            
+            // Hide the warning modal
+            const warningModal = document.getElementById('auto-submit-warning');
+            warningModal.style.display = 'none';
+        }
+        
+        function autoSubmitQuiz() {
+            // Mark quiz as no longer started to prevent further tracking
+            quizStarted = false;
+            
+            // Add a flag to indicate this was an auto-submit
+            const form = document.getElementById('quiz-form');
+            const autoSubmitInput = document.createElement('input');
+            autoSubmitInput.type = 'hidden';
+            autoSubmitInput.name = 'auto_submitted';
+            autoSubmitInput.value = 'true';
+            form.appendChild(autoSubmitInput);
+            
+            // Submit the form
+            form.submit();
         }
 
         // Enter fullscreen
@@ -448,6 +562,9 @@
         document.getElementById('quiz-form')?.addEventListener('submit', (e) => {
             // Stop tracking violations when submitting
             quizStarted = false;
+            
+            // Cancel any pending auto-submit
+            cancelAutoSubmit();
             
             // Exit fullscreen before submission to prevent browser blocking
             if (document.fullscreenElement) {
