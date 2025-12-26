@@ -4,9 +4,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.db import IntegrityError
-from django.db.models import Avg, Max, Count
+from django.db.models import Avg, Max, Count, Q
+from django.http import HttpResponse
 from .models import Category, Question, QuizAttempt
 import random
+import csv
 from datetime import datetime, timedelta
 from django.contrib.auth.decorators import login_required, user_passes_test
 
@@ -17,7 +19,9 @@ def is_teacher(user):
 def is_staff_user(user):
     return user.is_staff or user.is_superuser
 
-@user_passes_test(is_staff_user, is_teacher)
+# ==================== CATEGORY MANAGEMENT ====================
+
+@user_passes_test(is_staff_user)
 def manage_categories(request):
     """View and manage all categories (Admin only)"""
     categories = Category.objects.all().annotate(
@@ -30,7 +34,7 @@ def manage_categories(request):
     }
     return render(request, 'home/manage_categories.html', context)
 
-@user_passes_test(is_staff_user,is_teacher)
+@user_passes_test(is_staff_user)
 def add_category(request):
     """Add a new category (Admin only)"""
     if request.method == 'POST':
@@ -151,15 +155,302 @@ def add_question(request, category_id):
     
     return render(request, 'home/add_question.html', {'category': category})
 
+# ==================== RESULTS MANAGEMENT (ADMIN/TEACHER) ====================
+
+@user_passes_test(is_staff_user)
+def view_all_results(request):
+    """View all quiz results with filtering and search (Admin/Teacher only)"""
+    
+    # Get all quiz attempts with related data
+    attempts = QuizAttempt.objects.select_related('user', 'category').order_by('-timestamp')
+    
+    # Get filter parameters
+    category_filter = request.GET.get('category', '')
+    user_filter = request.GET.get('user', '')
+    flagged_filter = request.GET.get('flagged', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    search_query = request.GET.get('search', '')
+    
+    # Apply filters
+    if category_filter:
+        attempts = attempts.filter(category_id=category_filter)
+    
+    if user_filter:
+        attempts = attempts.filter(user_id=user_filter)
+    
+    if flagged_filter == 'yes':
+        attempts = attempts.filter(is_flagged=True)
+    elif flagged_filter == 'no':
+        attempts = attempts.filter(is_flagged=False)
+    
+    if date_from:
+        attempts = attempts.filter(timestamp__gte=date_from)
+    
+    if date_to:
+        # Add one day to include the entire end date
+        date_to_obj = datetime.strptime(date_to, '%Y-%m-%d')
+        date_to_end = date_to_obj + timedelta(days=1)
+        attempts = attempts.filter(timestamp__lt=date_to_end)
+    
+    if search_query:
+        attempts = attempts.filter(
+            Q(user__username__icontains=search_query) |
+            Q(user__first_name__icontains=search_query) |
+            Q(user__last_name__icontains=search_query) |
+            Q(user__email__icontains=search_query)
+        )
+    
+    # Calculate statistics
+    total_attempts = attempts.count()
+    flagged_attempts = attempts.filter(is_flagged=True).count()
+    
+    if total_attempts > 0:
+        avg_score = attempts.aggregate(
+            avg=Avg('score')
+        )['avg']
+        avg_percentage = round(avg_score / attempts.first().total * 100 if attempts.first() else 0, 1)
+    else:
+        avg_score = 0
+        avg_percentage = 0
+    
+    # Prepare results data
+    results_data = []
+    for attempt in attempts:
+        percentage = round((attempt.score / attempt.total * 100) if attempt.total > 0 else 0, 1)
+        results_data.append({
+            'id': attempt.id,
+            'user': attempt.user,
+            'username': attempt.user.username,
+            'full_name': f"{attempt.user.first_name} {attempt.user.last_name}".strip() or attempt.user.username,
+            'email': attempt.user.email,
+            'category': attempt.category.name,
+            'score': attempt.score,
+            'total': attempt.total,
+            'percentage': percentage,
+            'timestamp': attempt.timestamp,
+            'is_flagged': attempt.is_flagged,
+            'tab_switches': attempt.tab_switches,
+            'fullscreen_exits': attempt.fullscreen_exits,
+        })
+    
+    # Get all categories and users for filter dropdowns
+    categories = Category.objects.all().order_by('name')
+    users = User.objects.filter(
+        quizattempt__isnull=False
+    ).distinct().order_by('username')
+    
+    context = {
+        'results': results_data,
+        'total_attempts': total_attempts,
+        'flagged_attempts': flagged_attempts,
+        'avg_percentage': avg_percentage,
+        'categories': categories,
+        'users': users,
+        'filters': {
+            'category': category_filter,
+            'user': user_filter,
+            'flagged': flagged_filter,
+            'date_from': date_from,
+            'date_to': date_to,
+            'search': search_query,
+        }
+    }
+    
+    return render(request, 'home/view_all_results.html', context)
+
+
+@user_passes_test(is_staff_user)
+def export_results_csv(request):
+    """Export filtered results to CSV (Admin/Teacher only)"""
+    
+    # Get all quiz attempts with related data
+    attempts = QuizAttempt.objects.select_related('user', 'category').order_by('-timestamp')
+    
+    # Apply same filters as view_all_results
+    category_filter = request.GET.get('category', '')
+    user_filter = request.GET.get('user', '')
+    flagged_filter = request.GET.get('flagged', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    search_query = request.GET.get('search', '')
+    
+    if category_filter:
+        attempts = attempts.filter(category_id=category_filter)
+    
+    if user_filter:
+        attempts = attempts.filter(user_id=user_filter)
+    
+    if flagged_filter == 'yes':
+        attempts = attempts.filter(is_flagged=True)
+    elif flagged_filter == 'no':
+        attempts = attempts.filter(is_flagged=False)
+    
+    if date_from:
+        attempts = attempts.filter(timestamp__gte=date_from)
+    
+    if date_to:
+        date_to_obj = datetime.strptime(date_to, '%Y-%m-%d')
+        date_to_end = date_to_obj + timedelta(days=1)
+        attempts = attempts.filter(timestamp__lt=date_to_end)
+    
+    if search_query:
+        attempts = attempts.filter(
+            Q(user__username__icontains=search_query) |
+            Q(user__first_name__icontains=search_query) |
+            Q(user__last_name__icontains=search_query) |
+            Q(user__email__icontains=search_query)
+        )
+    
+    # Create CSV response
+    response = HttpResponse(content_type='text/csv')
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    response['Content-Disposition'] = f'attachment; filename="quiz_results_{timestamp}.csv"'
+    
+    writer = csv.writer(response)
+    
+    # Write header
+    writer.writerow([
+        'Attempt ID',
+        'Username',
+        'Full Name',
+        'Email',
+        'Category',
+        'Score',
+        'Total Questions',
+        'Percentage',
+        'Date & Time',
+        'Flagged',
+        'Tab Switches',
+        'Fullscreen Exits',
+        'Status'
+    ])
+    
+    # Write data rows
+    for attempt in attempts:
+        percentage = round((attempt.score / attempt.total * 100) if attempt.total > 0 else 0, 1)
+        full_name = f"{attempt.user.first_name} {attempt.user.last_name}".strip() or attempt.user.username
+        
+        # Determine status
+        if attempt.is_flagged:
+            status = 'FLAGGED'
+        elif attempt.tab_switches > 0 or attempt.fullscreen_exits > 0:
+            status = 'WARNING'
+        else:
+            status = 'CLEAN'
+        
+        writer.writerow([
+            attempt.id,
+            attempt.user.username,
+            full_name,
+            attempt.user.email,
+            attempt.category.name,
+            attempt.score,
+            attempt.total,
+            f"{percentage}%",
+            attempt.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+            'Yes' if attempt.is_flagged else 'No',
+            attempt.tab_switches,
+            attempt.fullscreen_exits,
+            status
+        ])
+    
+    return response
+
+
+@user_passes_test(is_staff_user)
+def delete_result(request, attempt_id):
+    """Delete a specific quiz attempt (Admin/Teacher only)"""
+    if request.method == 'POST':
+        attempt = get_object_or_404(QuizAttempt, id=attempt_id)
+        user_name = attempt.user.username
+        category_name = attempt.category.name
+        attempt.delete()
+        messages.success(request, f'Deleted quiz attempt for {user_name} in {category_name}')
+    
+    return redirect('view_all_results')
+
+
+@user_passes_test(is_staff_user)
+def view_user_detail(request, user_id):
+    """View detailed results for a specific user (Admin/Teacher only)"""
+    user_obj = get_object_or_404(User, id=user_id)
+    attempts = QuizAttempt.objects.filter(user=user_obj).select_related('category').order_by('-timestamp')
+    
+    # Calculate user statistics
+    total_attempts = attempts.count()
+    
+    if total_attempts > 0:
+        total_percentage = sum((attempt.score / attempt.total * 100) if attempt.total > 0 else 0 
+                               for attempt in attempts)
+        average_score = round(total_percentage / total_attempts, 1)
+        
+        # Get best score
+        best_attempt = max(attempts, key=lambda x: (x.score / x.total * 100) if x.total > 0 else 0)
+        best_score = round((best_attempt.score / best_attempt.total * 100) if best_attempt.total > 0 else 0, 1)
+        best_category = best_attempt.category.name
+    else:
+        average_score = 0
+        best_score = 0
+        best_category = None
+    
+    flagged_count = attempts.filter(is_flagged=True).count()
+    
+    # Prepare attempts data
+    attempts_data = []
+    for attempt in attempts:
+        percentage = round((attempt.score / attempt.total * 100) if attempt.total > 0 else 0, 1)
+        attempts_data.append({
+            'id': attempt.id,
+            'category': attempt.category.name,
+            'score': attempt.score,
+            'total': attempt.total,
+            'percentage': percentage,
+            'timestamp': attempt.timestamp,
+            'is_flagged': attempt.is_flagged,
+            'tab_switches': attempt.tab_switches,
+            'fullscreen_exits': attempt.fullscreen_exits,
+        })
+    
+    context = {
+        'student': user_obj,
+        'full_name': f"{user_obj.first_name} {user_obj.last_name}".strip() or user_obj.username,
+        'attempts': attempts_data,
+        'total_attempts': total_attempts,
+        'average_score': average_score,
+        'best_score': best_score,
+        'best_category': best_category,
+        'flagged_count': flagged_count,
+    }
+    
+    return render(request, 'home/user_detail.html', context)
+
 # ==================== DASHBOARD & QUIZ VIEWS ====================
 
 @login_required(login_url='login')
 def dashboard(request):
-    """Display personalized user dashboard with quiz statistics"""
+    """Display personalized user dashboard with quiz statistics and security notifications"""
     user = request.user
     
     # Get user's quiz attempts ordered by most recent
     attempts = QuizAttempt.objects.filter(user=user).select_related('category').order_by('-timestamp')
+    
+    # Get flagged attempts for notifications (last 10 flagged attempts)
+    flagged_attempts = attempts.filter(is_flagged=True)[:10]
+    
+    # Prepare security notifications
+    security_notifications = []
+    for attempt in flagged_attempts:
+        notification = {
+            'category_name': attempt.category.name,
+            'timestamp': attempt.timestamp,
+            'tab_switches': attempt.tab_switches,
+            'fullscreen_exits': attempt.fullscreen_exits,
+            'score': attempt.score,
+            'total': attempt.total,
+            'percentage': round((attempt.score / attempt.total * 100) if attempt.total > 0 else 0, 1)
+        }
+        security_notifications.append(notification)
     
     # Calculate statistics
     total_attempts = attempts.count()
@@ -180,7 +471,10 @@ def dashboard(request):
             'title': f"{attempt.category.name} Quiz",
             'score': percentage,
             'date': attempt.timestamp.strftime('%b %d, %Y'),
-            'raw_score': f"{attempt.score}/{attempt.total}"
+            'raw_score': f"{attempt.score}/{attempt.total}",
+            'is_flagged': attempt.is_flagged,
+            'tab_switches': attempt.tab_switches,
+            'fullscreen_exits': attempt.fullscreen_exits
         })
     
     # Calculate subject-wise performance
@@ -234,6 +528,8 @@ def dashboard(request):
         'best_category': best_category,
         'subject_performance': subject_performance,
         'improvement_trend': improvement_trend,
+        'security_notifications': security_notifications,
+        'has_flagged_attempts': flagged_attempts.exists(),
     }
     return render(request, 'home/dashboard.html', context)
 
@@ -264,11 +560,9 @@ def start_quiz(request, category_id):
         tab_switches = int(request.POST.get('tab_switches', '0'))
         fullscreen_exits = int(request.POST.get('fullscreen_exits', '0'))
         
-        # Log suspicious activity if needed
-        if tab_switches > 3 or fullscreen_exits > 2:
-            messages.warning(request, 
-                f'⚠️ Warning: Unusual activity detected - {tab_switches} tab switches, '
-                f'{fullscreen_exits} fullscreen exits. This attempt has been flagged for review.')
+        # REMOVED: Don't use messages.warning here - it persists to other pages
+        # Instead, we'll pass the flag status directly to the template
+        is_flagged = (tab_switches > 3 or fullscreen_exits > 2)
         
         score = 0
         total = len(questions)
@@ -305,20 +599,24 @@ def start_quiz(request, category_id):
             total=total,
             tab_switches=tab_switches,
             fullscreen_exits=fullscreen_exits,
-            is_flagged=(tab_switches > 3 or fullscreen_exits > 2)
+            is_flagged=is_flagged
         )
 
         percentage = round((score / total) * 100, 1) if total > 0 else 0
 
+        # Pass security info to the evaluation template instead of using messages
         return render(request, 'home/evaluation.html', {
             'category': category,
             'score': score,
             'total': total,
             'percentage': percentage,
             'results': results,
+            'is_flagged': is_flagged,
+            'tab_switches': tab_switches,
+            'fullscreen_exits': fullscreen_exits,
         })
 
-    # UPDATED: Use secure quiz template instead of regular one
+    # Use secure quiz template
     return render(request, 'home/start_quiz_secure.html', {
         'category': category,
         'questions': questions,

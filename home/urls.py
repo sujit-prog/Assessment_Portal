@@ -15,5 +15,11 @@ urlpatterns = [
     path('edit-category/<int:category_id>/', views.edit_category, name='edit_category'),
     path('delete-category/<int:category_id>/', views.delete_category, name='delete_category'),
     path('add-question/<int:category_id>/', views.add_question, name='add_question'),
+      path('results/', views.view_all_results, name='view_all_results'),
+    path('results/export/', views.export_results_csv, name='export_results_csv'),
+    path('results/delete/<int:attempt_id>/', views.delete_result, name='delete_result'),
+    path('results/user/<int:user_id>/', views.view_user_detail, name='view_user_detail'),
+    
+
 ]
 

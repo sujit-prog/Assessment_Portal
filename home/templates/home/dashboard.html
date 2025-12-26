@@ -114,6 +114,7 @@
                 aria-label="Toggle Theme">
         </button>
     </div>
+    
 
     <!-- Logout Button -->
     <div class="fixed top-4 left-4 z-50">
@@ -137,6 +138,14 @@
     </svg>
     Manage Categories
 </a>
+    <a href="{% url 'view_all_results' %}" 
+               class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-lg transition duration-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                View All Results
+            </a>
+        </div>
 {% endif %}
         <!-- Personalized Header -->
         <header class="mb-8 p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border-l-4 border-primary-blue">
