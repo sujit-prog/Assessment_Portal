@@ -1,199 +1,121 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en" class="">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Portal Registration</title>
+    <title>Acadvault | Register</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.5s, color 0.5s;
-            margin: 0;
-            padding: 1.5rem;
-        }
-        .card {
-            padding: 2.5rem;
-            border-radius: 1.5rem;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.15), 0 5px 15px rgba(0,0,0,0.05);
-            width: 100%;
-            max-width: 440px;
-            text-align: center;
-            transition: background 0.5s, color 0.5s, box-shadow 0.3s;
-        }
-        .card:hover {
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-        }
-        #register-button:hover {
-            transform: translateY(-1px);
-        }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; }
+        input:focus, select:focus { outline: none; }
+        @keyframes fadeInUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:none; } }
+        .fade-in { animation: fadeInUp 0.55s ease forwards; }
     </style>
     <script>
         tailwind.config = { darkMode: 'class' };
-
-        function updateThemeIcon(theme) {
-            const toggleButton = document.getElementById('theme-toggle');
-            if (!toggleButton) return;
-
-            if (theme === 'dark') {
-                toggleButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M10 2c-3.738 0-6.877 2.553-7.771 6.002C1.564 12.33 3.65 17 7.5 17h9c4.142 0 7.5-3.358 7.5-7.5 0-4.004-3.138-7.246-7.001-7.498C15.823 2.146 13.93 2 12 2c-2.451 0-4.698.817-6.574 2.188A8.002 8.002 0 0110 2z"/></svg>';
-                toggleButton.setAttribute('aria-label', 'Switch to Light Mode');
-            } else {
-                toggleButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>';
-                toggleButton.setAttribute('aria-label', 'Switch to Dark Mode');
-            }
-        }
-
-        function initTheme() {
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            if(savedTheme === 'dark') {
-                document.documentElement.classList.add('dark');
-            }
-            updateThemeIcon(savedTheme);
-        }
-
-        function toggleDarkMode() {
+        (function() {
+            const t = localStorage.getItem('theme');
+            if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');
+        })();
+        function toggleTheme() {
             const isDark = document.documentElement.classList.toggle('dark');
-            const newTheme = isDark ? 'dark' : 'light';
-            localStorage.setItem('theme', newTheme);
-            updateThemeIcon(newTheme);
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateIcon(isDark);
         }
-
-        window.onload = initTheme;
+        function updateIcon(isDark) {
+            const btn = document.getElementById('theme-btn');
+            if (!btn) return;
+            btn.innerHTML = isDark
+                ? `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>`
+                : `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>`;
+        }
+        window.onload = () => updateIcon(document.documentElement.classList.contains('dark'));
     </script>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 text-gray-900 dark:text-gray-100">
+<body class="bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 text-slate-900 dark:text-slate-100">
 
-    <!-- Theme Toggle Button -->
-    <div class="fixed top-4 right-4 z-50">
-        <button id="theme-toggle" onclick="toggleDarkMode()" 
-                class="p-2 rounded-full text-gray-600 dark:text-blue-300 
-                       hover:bg-gray-200 dark:hover:bg-gray-700 transition duration-200"
-                aria-label="Toggle Theme">
-        </button>
-    </div>
+    <button id="theme-btn" onclick="toggleTheme()" class="fixed top-4 right-4 p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 shadow-sm transition" aria-label="Toggle theme"></button>
 
-    <!-- Registration Card -->
-    <div class="card bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-
-        <!-- Header -->
-        <div class="text-center mb-8">
-            <svg class="w-12 h-12 text-blue-600 dark:text-blue-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM12 10V6.253C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.247"></path>
-            </svg>
-            <h1 class="text-3xl font-extrabold">Create New Account</h1>
-            <p class="text-gray-500 dark:text-gray-400 mt-2">Sign up to access your assessments and results.</p>
+    <div class="w-full max-w-[440px] fade-in">
+        <!-- Logo -->
+        <div class="flex justify-center mb-8">
+            <img src="{% static 'img/acadvault-logo.png' %}" alt="Acadvault" class="h-24 w-auto object-contain">
         </div>
 
-        <!-- Django Messages -->
-        {% if messages %}
-            <div class="mb-6">
+        <!-- Card -->
+        <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl shadow-slate-200/60 dark:shadow-slate-950/60 p-8 border border-slate-100 dark:border-slate-700">
+            <h1 class="text-2xl font-extrabold text-slate-800 dark:text-slate-100 mb-1">Create an account</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-7">Join the portal to access your assessments</p>
+
+            {% if messages %}
+            <div class="mb-5 space-y-2">
                 {% for message in messages %}
-                    <div class="p-3 rounded-lg text-sm font-medium
-                        {% if message.tags == 'error' %}
-                            bg-red-100 dark:bg-red-800 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300
-                        {% elif message.tags == 'success' %}
-                            bg-green-100 dark:bg-green-800 border border-green-400 dark:border-green-700 text-green-700 dark:text-green-300
-                        {% else %}
-                            bg-blue-100 dark:bg-blue-800 border border-blue-400 dark:border-blue-700 text-blue-700 dark:text-blue-300
-                        {% endif %}">
-                        {{ message }}
-                    </div>
+                <div class="p-3 rounded-xl text-sm font-medium
+                    {% if message.tags == 'error' %}bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300
+                    {% elif message.tags == 'success' %}bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300
+                    {% else %}bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300{% endif %}">
+                    {{ message }}
+                </div>
                 {% endfor %}
             </div>
-        {% endif %}
+            {% endif %}
 
-        <!-- Registration Form -->
-        <form method="POST" action="{% url 'register' %}">
-            {% csrf_token %}
+            <form method="POST" action="{% url 'register' %}">
+                {% csrf_token %}
 
-             <!-- User Type Selection -->
-            <div class="mb-5 text-left">
-                <label for="user_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">I am a *</label>
-                <select id="user_type" name="user_type" required
-                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl 
-                           bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
-                           focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/50 
-                           transition duration-150 cursor-pointer
-                           appearance-none bg-no-repeat bg-right
-                           [background-image:url('data:image/svg+xml;charset=UTF-8,%3csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3cpath%20fill%3D%22%236B7280%22%20d%3D%22M10.293%203.293L6%207.586%201.707%203.293A1%201%200%2000.293%204.707l5%205a1%201%200%20001.414%200l5-5a1%201%200%2000-1.414-1.414z%22%2F%3E%3C%2Fsvg%3E')]
-                           dark:[background-image:url('data:image/svg+xml;charset=UTF-8,%3csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3cpath%20fill%3D%22%23D1D5DB%22%20d%3D%22M10.293%203.293L6%207.586%201.707%203.293A1%201%200%2000.293%204.707l5%205a1%201%200%20001.414%200l5-5a1%201%200%2000-1.414-1.414z%22%2F%3E%3C%2Fsvg%3E')]
-                           pr-10">
-                    <option value="student" class="bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">Student</option>
-                    <option value="teacher" class="bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">Teacher/Admin</option>
-                </select>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    <span class="inline-flex items-center gap-1">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        Teachers can manage categories and questions
-                    </span>
-                </p>
-            </div>
+                <div class="mb-4">
+                    <label for="user_type" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">I am a</label>
+                    <select id="user_type" name="user_type" required
+                        class="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition text-sm cursor-pointer">
+                        <option value="student">Student</option>
+                        <option value="teacher">Teacher / Admin</option>
+                    </select>
+                </div>
 
-            
-            <!-- Full Name -->
-            <div class="mb-5 text-left">
-                <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Full Name</label>
-                <input type="text" id="name" name="name" required placeholder="John Doe"
-                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/50 transition duration-150 dark:bg-gray-700">
-            </div>
+                <div class="mb-4">
+                    <label for="name" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Full Name</label>
+                    <input type="text" id="name" name="name" required placeholder="John Doe"
+                        class="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition text-sm">
+                </div>
 
-            <!-- Username -->
-            <div class="mb-5 text-left">
-                <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Username</label>
-                <input type="text" id="username" name="username" required placeholder="S1234567"
-                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/50 transition duration-150 dark:bg-gray-700">
-            </div>
-            <!-- Email ID -->
-             <div class="mb-5 text-left">
-                <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email id</label>
-                <input type="text" id="email" name="email" required placeholder="email@school.edu"
-                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/50 transition duration-150 dark:bg-gray-700">
-            </div>
+                <div class="mb-4">
+                    <label for="username" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Username</label>
+                    <input type="text" id="username" name="username" required placeholder="S1234567"
+                        class="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition text-sm">
+                </div>
 
-            <!-- Password -->
-            <div class="mb-5 text-left">
-                <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Password</label>
-                <input type="password" id="password" name="password" required placeholder="••••••••"
-                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/50 transition duration-150 dark:bg-gray-700">
-            </div>
+                <div class="mb-4">
+                    <label for="email" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Email</label>
+                    <input type="email" id="email" name="email" required placeholder="email@school.edu"
+                        class="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition text-sm">
+                </div>
 
-            <!-- Confirm Password -->
-            <div class="mb-6 text-left">
-                <label for="confirm-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirm Password</label>
-                <input type="password" id="confirm-password" name="confirm-password" required placeholder="••••••••"
-                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/50 transition duration-150 dark:bg-gray-700">
-            </div>
-                
+                <div class="mb-4">
+                    <label for="password" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Password</label>
+                    <input type="password" id="password" name="password" required placeholder="••••••••"
+                        class="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition text-sm">
+                </div>
 
-            <!-- Register Button -->
-            <button id="register-button" type="submit"
-                class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-lg text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 transition duration-200 shadow-blue-500/50">
-                Register Account
-            </button>
-        </form>
-        
-        <!-- Log In Link -->
-        <p class="mt-6 text-sm text-center text-gray-500 dark:text-gray-400">
-            Already have an account? 
-            <a href="{% url 'login' %}" class="text-blue-600 font-semibold hover:text-blue-700 dark:hover:text-blue-300 transition duration-200 hover:underline">
-                Log In
-            </a>
-        </p>
+                <div class="mb-6">
+                    <label for="confirm-password" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Confirm Password</label>
+                    <input type="password" id="confirm-password" name="confirm-password" required placeholder="••••••••"
+                        class="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition text-sm">
+                </div>
 
-        <!-- Footer Note -->
-        <div class="mt-8 text-center text-xs text-gray-400 dark:text-gray-500">
-            By registering, you agree to our 
-            <a href="#" class="text-blue-600 dark:text-blue-400 hover:underline">Terms of Service</a> and Privacy Policy.
+                <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-600/25 hover:shadow-blue-600/40 transition text-sm tracking-wide uppercase">
+                    Create Account
+                </button>
+            </form>
+
+            <p class="mt-6 text-sm text-center text-slate-500 dark:text-slate-400">
+                Already have an account?
+                <a href="{% url 'login' %}" class="font-bold text-blue-600 dark:text-blue-400 hover:underline ml-1">Sign In</a>
+            </p>
         </div>
 
+        <p class="mt-6 text-center text-xs text-slate-400 dark:text-slate-600">© 2026 Acadvault Systems</p>
     </div>
 </body>
 </html>

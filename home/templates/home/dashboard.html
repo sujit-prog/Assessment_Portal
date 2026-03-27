@@ -1,324 +1,229 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en" class="">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ display_name }}'s Dashboard</title>
-    <!-- Tailwind CSS -->
+    <title>{{ display_name }}'s Dashboard | Acadvault</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            min-height: 100vh;
-            transition: background-color 0.5s, color 0.5s;
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .progress-bar { transition: width 1.2s cubic-bezier(.4,0,.2,1); }
+        .stat-card { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+        .stat-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .nav-blur { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        .bg-soft {
+            background-color: #f8fafc;
+            background-image: radial-gradient(at 0% 0%, hsla(217,100%,97%,1) 0, transparent 60%),
+                              radial-gradient(at 100% 100%, hsla(238,100%,97%,1) 0, transparent 60%);
         }
-        .progress-bar {
-            transition: width 1s ease-out;
+        .dark .bg-soft {
+            background-color: #0f172a;
+            background-image: radial-gradient(at 0% 0%, hsla(217,100%,8%,0.5) 0, transparent 60%),
+                              radial-gradient(at 100% 100%, hsla(238,100%,8%,0.5) 0, transparent 60%);
         }
-        .stat-card {
-            transition: all 0.3s ease;
-        }
-        .stat-card:hover {
-            transform: translateY(-4px);
-        }
+        @keyframes fadeInUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
+        .fade-in { animation: fadeInUp 0.5s ease forwards; }
     </style>
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        'primary-blue': '#4f46e5',
-                        'primary-dark': '#3730a3',
-                        'accent-green': '#10b981',
-                        'accent-yellow': '#f59e0b',
-                        'accent-red': '#ef4444',
-                    }
-                }
-            }
-        }
-
-        function updateThemeIcon(theme) {
-            const toggleButton = document.getElementById('theme-toggle');
-            if (!toggleButton) return;
-
-            if (theme === 'dark') {
-                toggleButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M10 2c-3.738 0-6.877 2.553-7.771 6.002C1.564 12.33 3.65 17 7.5 17h9c4.142 0 7.5-3.358 7.5-7.5 0-4.004-3.138-7.246-7.001-7.498C15.823 2.146 13.93 2 12 2c-2.451 0-4.698.817-6.574 2.188A8.002 8.002 0 0110 2z"/></svg>';
-                toggleButton.setAttribute('aria-label', 'Switch to Light Mode');
-            } else {
-                toggleButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>';
-                toggleButton.setAttribute('aria-label', 'Switch to Dark Mode');
-            }
-        }
-
-        function initTheme() {
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            if(savedTheme === 'dark') document.documentElement.classList.add('dark');
-            updateThemeIcon(savedTheme);
-        }
-        
-        function toggleDarkMode() {
+            theme: { extend: { colors: { brand: { 50:'#eff6ff',100:'#dbeafe',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8',900:'#1e3a8a',950:'#0f172a' }, accent: { green:'#10b981', yellow:'#f59e0b', red:'#ef4444' } } } }
+        };
+        (function() {
+            const t = localStorage.getItem('theme');
+            const sys = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (t === 'dark' || (!t && sys)) document.documentElement.classList.add('dark');
+        })();
+        function toggleTheme() {
             const isDark = document.documentElement.classList.toggle('dark');
-            const newTheme = isDark ? 'dark' : 'light';
-            localStorage.setItem('theme', newTheme);
-            updateThemeIcon(newTheme);
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateThemeIcon(isDark);
         }
-
-        function getScoreColor(score) {
-            if(score >= 90) return 'bg-accent-green';
-            if(score >= 80) return 'bg-accent-yellow';
-            return 'bg-accent-red';
+        function updateThemeIcon(isDark) {
+            const btn = document.getElementById('theme-btn');
+            if (!btn) return;
+            btn.innerHTML = isDark
+                ? `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>`
+                : `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>`;
         }
-
-        function getScoreTextColor(score) {
-            if(score >= 90) return 'text-accent-green';
-            if(score >= 80) return 'text-accent-yellow';
-            return 'text-accent-red';
-        }
-
+        function getScoreColor(s) { return s>=90?'bg-emerald-500':s>=70?'bg-amber-400':'bg-red-500'; }
+        function getScoreTextColor(s) { return s>=90?'text-emerald-600 dark:text-emerald-400':s>=70?'text-amber-600 dark:text-amber-400':'text-red-600 dark:text-red-400'; }
         function getGreeting() {
-            const hour = new Date().getHours();
-            if (hour < 12) return 'Good Morning';
-            if (hour < 18) return 'Good Afternoon';
-            return 'Good Evening';
+            const h = new Date().getHours();
+            return h < 12 ? 'Good Morning' : h < 18 ? 'Good Afternoon' : 'Good Evening';
         }
-
         window.onload = function() {
-            initTheme();
+            const isDark = document.documentElement.classList.contains('dark');
+            updateThemeIcon(isDark);
             document.getElementById('greeting').textContent = getGreeting();
-            
-            // Apply colors and widths to progress bars
-            const progressBars = document.querySelectorAll('[data-score]');
-            progressBars.forEach(bar => {
-                const score = parseFloat(bar.getAttribute('data-score'));
-                bar.style.width = score + '%';
-                bar.classList.add(getScoreColor(score));
+            document.querySelectorAll('[data-score]').forEach(bar => {
+                const s = parseFloat(bar.dataset.score);
+                bar.style.width = s + '%';
+                bar.classList.add(getScoreColor(s));
             });
-            
-            const scoreTexts = document.querySelectorAll('[data-score-text]');
-            scoreTexts.forEach(text => {
-                const score = parseFloat(text.getAttribute('data-score-text'));
-                text.classList.add(getScoreTextColor(score));
+            document.querySelectorAll('[data-score-text]').forEach(el => {
+                el.classList.add(getScoreTextColor(parseFloat(el.dataset.scoreText)));
             });
         };
     </script>
 </head>
-<body class="bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 text-gray-900 dark:text-gray-100">
+<body class="bg-soft text-slate-900 dark:text-slate-100 min-h-screen">
 
-    <!-- Theme Toggle -->
-    <div class="fixed top-4 right-4 z-50">
-        <button id="theme-toggle" onclick="toggleDarkMode()"
-                class="p-2 rounded-full text-gray-600 dark:text-blue-300
-                       hover:bg-gray-200 dark:hover:bg-gray-700 transition duration-200"
-                aria-label="Toggle Theme">
-        </button>
-    </div>
-    
-
-    <!-- Logout Button -->
-    <div class="fixed top-4 left-4 z-50">
-        <a href="{% url 'landing_page' %}" 
-           class="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-lg transition duration-200">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-            </svg>
-            Logout
-        </a>
-    </div>
-    
-
-    <div class="container mx-auto px-4 py-8 sm:px-6 lg:px-8 max-w-7xl pt-20">
-        {% if user.is_staff or user.is_superuser %}
-<a href="{% url 'manage_categories' %}" 
-   class="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg">
-    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-    </svg>
-    Manage Categories
-</a>
-    <a href="{% url 'view_all_results' %}" 
-               class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-lg transition duration-200">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                </svg>
-                View All Results
+    <!-- Navbar -->
+    <nav class="sticky top-0 z-50 px-4 py-3 border-b border-slate-200/60 dark:border-slate-800/60 nav-blur bg-white/80 dark:bg-slate-900/80">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <!-- Logo -->
+            <a href="{% url 'dashboard' %}" class="flex items-center">
+                <img src="{% static 'img/acadvault-logo.png' %}" alt="Acadvault" class="h-14 w-auto object-contain">
             </a>
+            <!-- Nav Actions -->
+            <div class="flex items-center gap-2">
+                {% if user.is_staff or user.is_superuser %}
+                <a href="{% url 'manage_categories' %}" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-violet-700 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 hover:bg-violet-200 dark:hover:bg-violet-900/50 rounded-lg transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    Manage
+                </a>
+                <a href="{% url 'view_all_results' %}" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-indigo-700 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/30 hover:bg-indigo-200 dark:hover:bg-indigo-900/50 rounded-lg transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    Results
+                </a>
+                {% endif %}
+                <a href="{% url 'select_category' %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-bold text-white bg-brand-600 hover:bg-brand-700 rounded-lg shadow transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    New Quiz
+                </a>
+                <button id="theme-btn" onclick="toggleTheme()" class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition" aria-label="Toggle theme"></button>
+                <a href="{% url 'landing_page' %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                    Logout
+                </a>
+            </div>
         </div>
-{% endif %}
-        <!-- Personalized Header -->
-        <header class="mb-8 p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border-l-4 border-primary-blue">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- Welcome Header -->
+        <header class="fade-in mb-8 p-8 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-700/60 border-l-4 border-l-brand-600">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <h1 class="text-5xl font-extrabold text-gray-800 dark:text-gray-100">
-                        <span id="greeting">Welcome</span>, 
-                        <span class="text-primary-blue">{{ display_name }}</span>!
+                    <p class="text-sm font-semibold text-brand-600 dark:text-brand-400 mb-1 tracking-wide uppercase">Student Dashboard</p>
+                    <h1 class="text-4xl font-extrabold text-slate-800 dark:text-slate-100 leading-tight">
+                        <span id="greeting">Welcome</span>,&nbsp;<span class="text-brand-600">{{ display_name }}</span>!
                     </h1>
-                    <p class="text-gray-600 dark:text-gray-300 mt-2 text-lg">
-                        {% if user.email %}
-                            {{ user.email }}
-                        {% else %}
-                            @{{ user.username }}
-                        {% endif %}
-                    </p>
-                    <p class="text-gray-500 dark:text-gray-400 mt-1">
-                        Member since {{ user.date_joined|date:"F Y" }}
+                    <p class="text-slate-500 dark:text-slate-400 mt-2 text-sm">
+                        {% if user.email %}{{ user.email }}{% else %}@{{ user.username }}{% endif %}
+                        &nbsp;·&nbsp; Member since {{ user.date_joined|date:"F Y" }}
                     </p>
                 </div>
-                
                 {% if improvement_trend == 'improving' %}
-                <div class="mt-4 md:mt-0 flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                    <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                    </svg>
-                    <span class="font-semibold text-green-700 dark:text-green-300">Trending Up!</span>
+                <div class="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl">
+                    <svg class="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                    <span class="text-sm font-bold text-emerald-700 dark:text-emerald-300">Trending Up!</span>
                 </div>
                 {% endif %}
             </div>
         </header>
 
-        <!-- Key Statistics Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-            
-            <!-- Total Assessments -->
-            <div class="stat-card bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-l-4 border-blue-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Assessments</p>
-                        <p class="text-4xl font-bold text-gray-900 dark:text-gray-100 mt-2">{{ total_attempts }}</p>
-                    </div>
-                    <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30">
-                        <svg class="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                    </div>
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 fade-in" style="animation-delay:0.1s">
+
+            <div class="stat-card bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-700/60 border-l-4 border-l-blue-500">
+                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Total Assessments</p>
+                <p class="text-4xl font-extrabold text-slate-900 dark:text-slate-100 mt-2">{{ total_attempts }}</p>
+                <div class="mt-3 p-2 w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                 </div>
             </div>
 
-            <!-- Average Score -->
-            <div class="stat-card bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-l-4 border-accent-green">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Average Score</p>
-                        <p class="text-4xl font-bold text-accent-green mt-2">{{ average_score }}%</p>
-                    </div>
-                    <div class="p-3 rounded-full bg-green-100 dark:bg-green-900/30">
-                        <svg class="w-8 h-8 text-accent-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
-                    </div>
+            <div class="stat-card bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-700/60 border-l-4 border-l-emerald-500">
+                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Average Score</p>
+                <p class="text-4xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-2">{{ average_score }}%</p>
+                <div class="mt-3 p-2 w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
                 </div>
             </div>
 
-            <!-- Highest Score -->
-            <div class="stat-card bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-l-4 border-yellow-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Highest Score</p>
-                        <p class="text-4xl font-bold text-yellow-600 dark:text-yellow-400 mt-2">{{ highest_score }}%</p>
-                        {% if best_category %}
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">in {{ best_category }}</p>
-                        {% endif %}
-                    </div>
-                    <div class="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900/30">
-                        <svg class="w-8 h-8 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
-                        </svg>
-                    </div>
+            <div class="stat-card bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-700/60 border-l-4 border-l-amber-500">
+                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Highest Score</p>
+                <p class="text-4xl font-extrabold text-amber-600 dark:text-amber-400 mt-2">{{ highest_score }}%</p>
+                {% if best_category %}<p class="text-xs text-slate-500 dark:text-slate-400 mt-1">in {{ best_category }}</p>{% endif %}
+                <div class="mt-3 p-2 w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
                 </div>
             </div>
 
-            <!-- Start New Assessment -->
-            <div class="stat-card bg-gradient-to-br from-primary-blue to-indigo-600 p-6 rounded-xl shadow-lg hover:shadow-2xl cursor-pointer">
-                <a href="{% url 'select_category' %}" class="block h-full text-white">
-                    <div class="flex flex-col items-center justify-center h-full text-center">
-                        <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <p class="text-lg font-bold">Start New Assessment</p>
-                        <p class="text-sm opacity-90 mt-1">Choose a category</p>
-                    </div>
-                </a>
-            </div>
+            <a href="{% url 'select_category' %}" class="stat-card flex flex-col items-center justify-center p-6 rounded-2xl bg-gradient-to-br from-brand-600 to-indigo-600 text-white shadow-lg shadow-brand-500/25 cursor-pointer">
+                <svg class="w-10 h-10 mb-3 opacity-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <p class="text-base font-bold">Start Assessment</p>
+                <p class="text-xs opacity-80 mt-1">Choose a category</p>
+            </a>
         </div>
 
-        <!-- Detailed Performance Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            
+        <!-- Performance & History Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 fade-in" style="animation-delay:0.2s">
+
             <!-- Subject Performance -->
-            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
-                <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 flex items-center gap-2">
-                    <svg class="w-6 h-6 text-primary-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                    </svg>
-                    Your Performance by Subject
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-700/60">
+                <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-5 flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-lg bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-brand-600 dark:text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    </span>
+                    Performance by Subject
                 </h2>
-                
                 {% if subject_performance %}
-                <div class="space-y-5">
+                <div class="space-y-4">
                     {% for perf in subject_performance %}
                     <div>
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{ perf.subject }}</span>
+                        <div class="flex justify-between items-center mb-1.5">
+                            <span class="text-sm font-semibold text-slate-700 dark:text-slate-300">{{ perf.subject }}</span>
                             <div class="flex items-center gap-3">
-                                <span class="text-xs text-gray-500 dark:text-gray-400">{{ perf.attempts }} attempt{{ perf.attempts|pluralize }}</span>
-                                <span class="text-sm font-bold text-gray-800 dark:text-gray-200">{{ perf.score }}%</span>
+                                <span class="text-xs text-slate-400">{{ perf.attempts }} attempt{{ perf.attempts|pluralize }}</span>
+                                <span class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ perf.score }}%</span>
                             </div>
                         </div>
-                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 shadow-inner">
-                            <div class="progress-bar h-3 rounded-full" 
-                                 data-score="{{ perf.score }}"></div>
+                        <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2.5">
+                            <div class="progress-bar h-2.5 rounded-full w-0" data-score="{{ perf.score }}"></div>
                         </div>
                     </div>
                     {% endfor %}
                 </div>
                 {% else %}
-                <div class="text-center py-8 text-gray-500 dark:text-gray-400">
-                    <svg class="w-16 h-16 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    <p>No assessments yet</p>
-                    <p class="text-sm mt-1">Start your first quiz to see your performance!</p>
+                <div class="text-center py-10 text-slate-400 dark:text-slate-500">
+                    <svg class="w-14 h-14 mx-auto mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <p class="font-medium">No data yet</p>
+                    <p class="text-sm mt-1">Take your first assessment to see results here!</p>
                 </div>
                 {% endif %}
             </div>
 
-            <!-- Recent Scores -->
-            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
-                <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 flex items-center gap-2">
-                    <svg class="w-6 h-6 text-primary-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    Recent Assessment History
+            <!-- Recent History -->
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-700/60">
+                <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-5 flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </span>
+                    Recent History
                 </h2>
-                
                 {% if recent_attempts %}
-                <div class="space-y-3">
+                <div class="space-y-2">
                     {% for attempt in recent_attempts %}
-                    <div class="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition duration-200">
-                        <div class="flex-1">
-                            <p class="font-semibold text-gray-800 dark:text-gray-200">{{ attempt.title }}</p>
-                            <div class="flex items-center gap-2 mt-1">
-                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                </svg>
-                                <span class="text-xs text-gray-500 dark:text-gray-400">{{ attempt.date }}</span>
-                            </div>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ attempt.raw_score }} correct</p>
+                    <div class="flex justify-between items-center p-3.5 bg-slate-50 dark:bg-slate-700/50 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                        <div>
+                            <p class="font-semibold text-sm text-slate-800 dark:text-slate-200">{{ attempt.title }}</p>
+                            <p class="text-xs text-slate-400 mt-0.5">{{ attempt.date }} · {{ attempt.raw_score }} correct</p>
                         </div>
-                        <div class="text-right">
-                            <span class="text-2xl font-extrabold" data-score-text="{{ attempt.score }}">{{ attempt.score }}%</span>
-                        </div>
+                        <span class="text-xl font-extrabold" data-score-text="{{ attempt.score }}">{{ attempt.score }}%</span>
                     </div>
                     {% endfor %}
                 </div>
                 {% else %}
-                <div class="text-center py-8 text-gray-500 dark:text-gray-400">
-                    <svg class="w-16 h-16 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <p>No recent activity</p>
+                <div class="text-center py-10 text-slate-400 dark:text-slate-500">
+                    <svg class="w-14 h-14 mx-auto mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <p class="font-medium">No recent activity</p>
                     <p class="text-sm mt-1">Take an assessment to build your history!</p>
                 </div>
                 {% endif %}
