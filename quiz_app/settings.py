@@ -5,7 +5,7 @@ Django settings for quiz_app project - Production Ready
 from pathlib import Path
 import os
 from dotenv import load_dotenv
-
+import dj_database_url
 # Load environment variables
 load_dotenv()
 
@@ -79,23 +79,25 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'quiz_app.wsgi.application'
 
-# Database - Supabase PostgreSQL with proper pooling configuration
+import dj_database_url
+import os
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME'),
-        'USER': os.getenv('DB_USER'),
-        'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': os.getenv('DB_HOST'),
-        'PORT': os.getenv('DB_PORT'),
-        'OPTIONS': {
-            'sslmode': 'require',
-            'connect_timeout': 30,
-        },
-        'CONN_MAX_AGE': 0,  # Important for pooler
-        'DISABLE_SERVER_SIDE_CURSORS': True,  # Required for pooler
-    }
+    'default': dj_database_url.config(
+        default=os.getenv('DATABASE_URL'),
+        conn_max_age=0,  # Important for serverless connection pooling
+    )
 }
+
+# Inject the required pooler properties into the default database options
+DATABASES['default']['OPTIONS'] = {
+    'sslmode': 'require',
+    'connect_timeout': 30,
+}
+DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True  # Required for Supabase PgBouncer/Supavisor
+
+
+
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
