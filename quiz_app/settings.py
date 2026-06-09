@@ -81,20 +81,68 @@ WSGI_APPLICATION = 'quiz_app.wsgi.application'
 
 import dj_database_url
 import os
+import socket
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default=os.getenv('DATABASE_URL'),
-        conn_max_age=0,  # Important for serverless connection pooling
-    )
-}
+# Get database URL from environment
+database_url = os.getenv('DATABASE_URL')
 
-# Inject the required pooler properties into the default database options
-DATABASES['default']['OPTIONS'] = {
-    'sslmode': 'require',
-    'connect_timeout': 30,
-}
-DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True  # Required for Supabase PgBouncer/Supavisor
+# If not set, construct from individual DB_* environment variables
+if not database_url:
+    db_user = os.getenv('DB_USER')
+    db_password = os.getenv('DB_PASSWORD')
+    db_host = os.getenv('DB_HOST')
+    db_port = os.getenv('DB_PORT', '5432')
+    db_name = os.getenv('DB_NAME')
+    
+    if all([db_user, db_password, db_host, db_name]) and db_password != '[YOUR-PASSWORD]':
+        database_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+
+# Function to check database connectivity
+def is_db_reachable(url_string):
+    if not url_string:
+        return False
+    try:
+        from urllib.parse import urlparse
+        parsed = urlparse(url_string)
+        host = parsed.hostname
+        port = parsed.port or 5432
+        
+        addresses = socket.getaddrinfo(host, port, proto=socket.IPPROTO_TCP)
+        if not addresses:
+            return False
+        family, socktype, proto, canonname, sockaddr = addresses[0]
+        s = socket.socket(family, socktype, proto)
+        s.settimeout(2)
+        s.connect(sockaddr)
+        s.close()
+        return True
+    except Exception:
+        return False
+
+# Use PostgreSQL if configured and reachable; otherwise fallback to local SQLite
+if database_url and is_db_reachable(database_url):
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=database_url,
+            conn_max_age=0,  # Important for serverless connection pooling
+        )
+    }
+    # Inject the required pooler properties into the default database options
+    DATABASES['default']['OPTIONS'] = {
+        'sslmode': 'require',
+        'connect_timeout': 30,
+    }
+    DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True  # Required for Supabase PgBouncer/Supavisor
+else:
+    # Fallback to local SQLite database
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
+
 
 
 
@@ -126,7 +174,9 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
-STATICFILES_DIRS = []
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
 STATIC_ROOT = BASE_DIR / 'staticfiles_build' / 'static'
 
 # WhiteNoise configuration for serving static files
