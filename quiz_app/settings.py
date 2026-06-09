@@ -119,8 +119,8 @@ def is_db_reachable(url_string):
     except Exception:
         return False
 
-# Use PostgreSQL if configured and reachable; otherwise fallback to local SQLite
-if database_url and is_db_reachable(database_url):
+# Use PostgreSQL if configured and reachable; always use it on Vercel
+if database_url and (os.getenv('VERCEL') == '1' or is_db_reachable(database_url)):
     DATABASES = {
         'default': dj_database_url.config(
             default=database_url,
